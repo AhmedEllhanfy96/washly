@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/booking_provider.dart';
-import '../../core/services/auth_service.dart';
 import '../../shared/widgets/booking_status_card.dart';
 import '../../shared/widgets/primary_button.dart';
 
@@ -13,7 +12,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(currentProfileProvider);
+    final profile = ref.watch(authProvider);
     final bookings = ref.watch(userBookingsProvider);
     final theme = Theme.of(context);
 
@@ -24,7 +23,7 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authServiceProvider).signOut(),
+            onPressed: () => ref.read(authProvider.notifier).signOut(),
           ),
         ],
       ),

@@ -28,7 +28,7 @@ class ServiceSelectionStep extends ConsumerWidget {
             title: 'Exterior Only',
             description:
                 'Full exterior wash, rinse, and dry. Perfect for a quick refresh.',
-            price: '\$20',
+            price: '195 EGP',
             icon: Icons.car_crash_outlined,
             features: const [
               'Exterior wash & rinse',
@@ -47,7 +47,7 @@ class ServiceSelectionStep extends ConsumerWidget {
             title: 'Full Interior + Exterior',
             description:
                 'Complete detailing inside and out. The full premium experience.',
-            price: '\$45',
+            price: '250 EGP',
             icon: Icons.cleaning_services,
             features: const [
               'Everything in Exterior',

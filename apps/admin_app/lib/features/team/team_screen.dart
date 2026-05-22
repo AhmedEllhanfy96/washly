@@ -28,8 +28,7 @@ class TeamScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.group_outlined, size: 64, color: Colors.grey),
                   SizedBox(height: 12),
-                  Text('No team members yet',
-                      style: TextStyle(color: Colors.grey)),
+                  Text('No team members yet', style: TextStyle(color: Colors.grey)),
                 ],
               ),
             );
@@ -46,10 +45,8 @@ class TeamScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddMemberDialog(
-      BuildContext context, WidgetRef ref) async {
+  Future<void> _showAddMemberDialog(BuildContext context, WidgetRef ref) async {
     final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -65,16 +62,7 @@ class TeamScreen extends ConsumerWidget {
               TextFormField(
                 controller: nameCtrl,
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) =>
-                    (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -87,22 +75,17 @@ class TeamScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               final member = TeamMember(
                 id: '',
                 name: nameCtrl.text.trim(),
-                email: emailCtrl.text.trim(),
                 phone: phoneCtrl.text.trim(),
                 isAvailable: true,
-                completedJobs: 0,
               );
-              await ref
-                  .read(adminBookingServiceProvider)
-                  .addTeamMember(member);
+              await ref.read(adminBookingServiceProvider).addTeamMember(member);
               if (context.mounted) Navigator.pop(context);
             },
             child: const Text('Add'),
@@ -125,38 +108,19 @@ class _MemberCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: member.isAvailable
-              ? Colors.green[100]
-              : Colors.grey[200],
+          backgroundColor: member.isAvailable ? Colors.green[100] : Colors.grey[200],
           child: Text(
             member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
             style: TextStyle(
                 color: member.isAvailable ? Colors.green[800] : Colors.grey),
           ),
         ),
-        title: Text(member.name,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(member.phone.isNotEmpty ? member.phone : member.email),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${member.completedJobs}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-                const Text('jobs', style: TextStyle(fontSize: 10)),
-              ],
-            ),
-            const SizedBox(width: 8),
-            Switch(
-              value: member.isAvailable,
-              onChanged: (v) => ref
-                  .read(adminBookingServiceProvider)
-                  .updateAvailability(member.id, v),
-            ),
-          ],
+        title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: member.phone.isNotEmpty ? Text(member.phone) : null,
+        trailing: Switch(
+          value: member.isAvailable,
+          onChanged: (v) =>
+              ref.read(adminBookingServiceProvider).updateAvailability(member.id, v),
         ),
       ),
     );

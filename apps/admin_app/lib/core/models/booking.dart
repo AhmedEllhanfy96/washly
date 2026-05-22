@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum ServiceType { exteriorOnly, fullService }
 
 enum BookingStatus {
@@ -31,13 +29,15 @@ class AdminBooking {
   final String customerPhone;
   final Map<String, dynamic> car;
   final ServiceType serviceType;
-  final Map<String, dynamic> location;
+  final double latitude;
+  final double longitude;
   final DateTime scheduledAt;
   final String timeSlot;
   final BookingStatus status;
   final String? assignedTo;
   final String? notes;
   final DateTime createdAt;
+  final String address;
 
   const AdminBooking({
     required this.id,
@@ -46,7 +46,9 @@ class AdminBooking {
     required this.customerPhone,
     required this.car,
     required this.serviceType,
-    required this.location,
+    required this.latitude,
+    required this.longitude,
+    required this.address,
     required this.scheduledAt,
     required this.timeSlot,
     required this.status,
@@ -55,26 +57,32 @@ class AdminBooking {
     required this.createdAt,
   });
 
-  factory AdminBooking.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return AdminBooking(
-      id: doc.id,
-      userId: data['userId'] as String? ?? '',
-      customerName: data['customerName'] as String? ?? 'Unknown',
-      customerPhone: data['customerPhone'] as String? ?? '',
-      car: (data['car'] as Map<String, dynamic>?) ?? {},
-      serviceType: data['serviceType'] == 'fullService'
-          ? ServiceType.fullService
-          : ServiceType.exteriorOnly,
-      location: (data['location'] as Map<String, dynamic>?) ?? {},
-      scheduledAt: (data['scheduledAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      timeSlot: data['timeSlot'] as String? ?? '',
-      status: BookingStatus.fromString(data['status'] as String? ?? 'pending'),
-      assignedTo: data['assignedTo'] as String?,
-      notes: data['notes'] as String?,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
+  factory AdminBooking.fromJson(Map<String, dynamic> json) => AdminBooking(
+        id: json['id'] as String,
+        userId: json['userId'] as String? ?? '',
+        customerName: json['customerName'] as String? ?? 'Unknown',
+        customerPhone: json['customerPhone'] as String? ?? '',
+        car: (json['car'] as Map<String, dynamic>?) ?? {},
+        serviceType: json['serviceType'] == 'fullService'
+            ? ServiceType.fullService
+            : ServiceType.exteriorOnly,
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+        address: json['address'] as String? ?? '',
+        scheduledAt: DateTime.parse(json['scheduledAt'] as String),
+        timeSlot: json['timeSlot'] as String? ?? '',
+        status: BookingStatus.fromString(json['status'] as String? ?? 'pending'),
+        assignedTo: json['assignedTo'] as String?,
+        notes: json['notes'] as String?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+
+  // Keep location map interface for booking_detail_screen compatibility
+  Map<String, dynamic> get location => {
+        'latitude': latitude,
+        'longitude': longitude,
+        'address': address,
+      };
 
   String get carSummary {
     final make = car['make'] ?? '';
@@ -82,6 +90,4 @@ class AdminBooking {
     final color = car['color'] ?? '';
     return '$color $make $model'.trim();
   }
-
-  String get address => location['address'] as String? ?? '';
 }

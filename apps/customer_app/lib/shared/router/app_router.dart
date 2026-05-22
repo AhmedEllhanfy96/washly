@@ -15,10 +15,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
     redirect: (context, state) {
+      if (authState.isLoading) return null;
       final isLoggedIn = authState.valueOrNull != null;
       final isAuthRoute = state.matchedLocation == '/login' ||
           state.matchedLocation == '/register';
-
       if (!isLoggedIn && !isAuthRoute) return '/login';
       if (isLoggedIn && isAuthRoute) return '/home';
       return null;
@@ -30,16 +30,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/home',
         builder: (_, __) => const HomeScreen(),
         routes: [
-          GoRoute(
-            path: 'book',
-            builder: (_, __) => const BookingFlowScreen(),
-          ),
+          GoRoute(path: 'book', builder: (_, __) => const BookingFlowScreen()),
         ],
       ),
-      GoRoute(
-        path: '/history',
-        builder: (_, __) => const BookingHistoryScreen(),
-      ),
+      GoRoute(path: '/history', builder: (_, __) => const BookingHistoryScreen()),
     ],
     errorBuilder: (_, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),

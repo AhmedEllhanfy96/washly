@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/services/auth_service.dart';
+import '../../core/providers/auth_provider.dart';
 
 class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
@@ -27,15 +27,14 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(adminAuthServiceProvider).signIn(
-            email: _emailCtrl.text.trim(),
-            password: _passCtrl.text,
+      await ref.read(adminAuthProvider.notifier).signIn(
+            _emailCtrl.text.trim(),
+            _passCtrl.text,
           );
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()), backgroundColor: Colors.red[700]),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red[700]),
         );
       }
     } finally {
@@ -60,25 +59,20 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.admin_panel_settings,
-                          size: 40, color: theme.colorScheme.primary),
+                      Icon(Icons.admin_panel_settings, size: 40, color: theme.colorScheme.primary),
                       const SizedBox(width: 12),
                       const Text('Washly Admin',
-                          style: TextStyle(
-                              fontSize: 26, fontWeight: FontWeight.bold)),
+                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text('Sign in to manage bookings',
-                      style: TextStyle(color: Colors.grey[600])),
+                  Text('Sign in to manage bookings', style: TextStyle(color: Colors.grey[600])),
                   const SizedBox(height: 40),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      labelText: 'Admin Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
+                        labelText: 'Admin Email', prefixIcon: Icon(Icons.email_outlined)),
                     validator: (v) =>
                         (v == null || !v.contains('@')) ? 'Invalid email' : null,
                   ),
@@ -87,11 +81,8 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                     controller: _passCtrl,
                     obscureText: true,
                     decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outlined),
-                    ),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'Too short' : null,
+                        labelText: 'Password', prefixIcon: Icon(Icons.lock_outlined)),
+                    validator: (v) => (v == null || v.length < 6) ? 'Too short' : null,
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 32),
@@ -102,13 +93,9 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                       onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Sign In',
-                              style: TextStyle(fontSize: 16)),
+                              height: 20, width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Sign In', style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],

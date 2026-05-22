@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/models/booking.dart';
+import '../../../core/models/time_slot.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../core/services/booking_service.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -24,9 +26,10 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
 
     setState(() => _loading = true);
     try {
+      final user = ref.read(authProvider).valueOrNull;
       final booking = Booking(
         id: '',
-        userId: '',
+        userId: user?.id ?? '',
         car: flow.car!,
         serviceType: flow.serviceType!,
         location: flow.location!,
@@ -35,7 +38,11 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
         status: BookingStatus.pending,
         createdAt: DateTime.now(),
       );
-      await ref.read(bookingServiceProvider).createBooking(booking);
+      await ref.read(bookingServiceProvider).createBooking(
+            booking: booking,
+            customerName: user?.name ?? '',
+            customerPhone: user?.phone ?? '',
+          );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -64,66 +71,95 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
     final fmt = DateFormat('EEEE, MMMM d, yyyy');
     final timeFmt = DateFormat('h:mm a');
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Confirm Booking',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('Review your booking before submitting.',
-              style: TextStyle(color: Colors.grey[600])),
-          const SizedBox(height: 24),
+    return Column(
+      children: [
+        // Scrollable summary
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Confirm Booking',
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('Review your booking before submitting.',
+                    style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 24),
 
-          _Section(title: 'Car Details', children: [
-            _Row('Make & Model',
-                '${flow.car?.make ?? ''} ${flow.car?.model ?? ''}'),
-            _Row('Color', flow.car?.color ?? ''),
-            _Row('Plate', flow.car?.plateNumber ?? ''),
-            if (flow.car?.year != null) _Row('Year', flow.car!.year!),
-          ]),
+                _Section(title: 'Car Details', children: [
+                  _Row('Make & Model',
+                      '${flow.car?.make ?? ''} ${flow.car?.model ?? ''}'),
+                  _Row('Color', flow.car?.color ?? ''),
+                  _Row('Plate', flow.car?.plateNumber ?? ''),
+                  if (flow.car?.year != null) _Row('Year', flow.car!.year!),
+                ]),
 
-          const SizedBox(height: 16),
-          _Section(title: 'Service', children: [
-            _Row(
-              'Type',
-              flow.serviceType == ServiceType.fullService
-                  ? 'Full Interior + Exterior'
-                  : 'Exterior Only',
+                const SizedBox(height: 16),
+                _Section(title: 'Service', children: [
+                  _Row(
+                    'Type',
+                    flow.serviceType == ServiceType.fullService
+                        ? 'Full Interior + Exterior'
+                        : 'Exterior Only',
+                  ),
+                  _Row(
+                    'Price',
+                    flow.serviceType == ServiceType.fullService
+                        ? '250 EGP'
+                        : '195 EGP',
+                  ),
+                ]),
+
+                const SizedBox(height: 16),
+                _Section(title: 'Location', children: [
+                  _Row('Address', flow.location?.address ?? ''),
+                ]),
+
+                const SizedBox(height: 16),
+                _Section(title: 'Schedule', children: [
+                  if (flow.selectedDate != null)
+                    _Row('Date', fmt.format(flow.selectedDate!)),
+                  if (flow.selectedTimeSlot != null)
+                    _Row(
+                      'Window',
+                      TimeSlot(
+                        startTime: flow.selectedTimeSlot!,
+                        endTime:
+                            TimeSlot.addTwoHours(flow.selectedTimeSlot!),
+                        available: true,
+                        maxBookings: 3,
+                        currentBookings: 0,
+                      ).displayLabel,
+                    ),
+                ]),
+              ],
             ),
-            _Row(
-              'Price',
-              flow.serviceType == ServiceType.fullService ? '\$45' : '\$20',
-            ),
-          ]),
+          ),
+        ),
 
-          const SizedBox(height: 16),
-          _Section(title: 'Location', children: [
-            _Row('Address', flow.location?.address ?? ''),
-          ]),
-
-          const SizedBox(height: 16),
-          _Section(title: 'Schedule', children: [
-            if (flow.selectedDate != null)
-              _Row('Date', fmt.format(flow.selectedDate!)),
-            if (flow.selectedTimeSlot != null)
-              _Row(
-                'Time',
-                timeFmt.format(
-                    DateFormat('HH:mm').parse(flow.selectedTimeSlot!)),
+        // Fixed submit button
+        Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
               ),
-          ]),
-
-          const Spacer(),
-          PrimaryButton(
+            ],
+          ),
+          child: PrimaryButton(
             label: 'Submit Booking',
             onPressed: _confirm,
             isLoading: _loading,
             icon: Icons.check,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

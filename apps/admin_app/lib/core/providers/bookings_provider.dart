@@ -9,15 +9,11 @@ final allBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
 });
 
 final pendingBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
-  return ref
-      .watch(adminBookingServiceProvider)
-      .watchBookingsByStatus(BookingStatus.pending);
+  return ref.watch(adminBookingServiceProvider).watchBookingsByStatus(BookingStatus.pending);
 });
 
 final confirmedBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
-  return ref
-      .watch(adminBookingServiceProvider)
-      .watchBookingsByStatus(BookingStatus.confirmed);
+  return ref.watch(adminBookingServiceProvider).watchBookingsByStatus(BookingStatus.confirmed);
 });
 
 final teamMembersProvider = StreamProvider<List<TeamMember>>((ref) {

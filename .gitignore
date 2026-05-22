@@ -39,3 +39,10 @@ build/
 .env.*
 firebase.json
 .firebaserc
+
+# Env files — contain secrets
+.env
+
+
+# Firebase debug
+firebase-debug.log

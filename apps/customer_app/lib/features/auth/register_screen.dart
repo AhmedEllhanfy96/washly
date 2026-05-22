@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/services/auth_service.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/primary_button.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -33,11 +33,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(authServiceProvider).signUpWithEmail(
-            name: _nameCtrl.text.trim(),
-            email: _emailCtrl.text.trim(),
-            password: _passCtrl.text,
-            phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      await ref.read(authProvider.notifier).signUp(
+            _emailCtrl.text.trim(),
+            _passCtrl.text,
+            _nameCtrl.text.trim(),
+            _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
           );
     } on Exception catch (e) {
       if (mounted) {
@@ -66,9 +66,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _nameCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outlined),
-                  ),
+                      labelText: 'Full Name', prefixIcon: Icon(Icons.person_outlined)),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Enter your name' : null,
                 ),
@@ -77,9 +75,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
+                      labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                   validator: (v) =>
                       (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
@@ -88,28 +84,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: 'Phone (optional)',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
+                      labelText: 'Phone (optional)', prefixIcon: Icon(Icons.phone_outlined)),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outlined),
-                  ),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? 'At least 6 characters'
-                      : null,
+                      labelText: 'Password', prefixIcon: Icon(Icons.lock_outlined)),
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? 'At least 6 characters' : null,
                 ),
                 const SizedBox(height: 32),
-                PrimaryButton(
-                  label: 'Create Account',
-                  onPressed: _submit,
-                  isLoading: _loading,
-                ),
+                PrimaryButton(label: 'Create Account', onPressed: _submit, isLoading: _loading),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => context.go('/login'),

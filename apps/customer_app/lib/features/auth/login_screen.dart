@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/services/auth_service.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/primary_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -30,9 +30,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(authServiceProvider).signInWithEmail(
-            email: _emailCtrl.text.trim(),
-            password: _passCtrl.text,
+      await ref.read(authProvider.notifier).signIn(
+            _emailCtrl.text.trim(),
+            _passCtrl.text,
           );
     } on Exception catch (e) {
       if (mounted) {
@@ -58,16 +58,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 48),
-                Icon(Icons.local_car_wash,
-                    size: 64, color: theme.colorScheme.primary),
+                Icon(Icons.local_car_wash, size: 64, color: theme.colorScheme.primary),
                 const SizedBox(height: 16),
                 Text('Welcome back',
-                    style: theme.textTheme.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text('Sign in to book your car wash',
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(color: Colors.grey[600])),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[600])),
                 const SizedBox(height: 40),
                 TextFormField(
                   controller: _emailCtrl,
@@ -76,8 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
-                  validator: (v) =>
-                      (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -87,21 +83,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                          _obscure ? Icons.visibility : Icons.visibility_off),
+                      icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? 'Password must be at least 6 characters'
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null,
                 ),
                 const SizedBox(height: 32),
-                PrimaryButton(
-                  label: 'Sign In',
-                  onPressed: _submit,
-                  isLoading: _loading,
-                ),
+                PrimaryButton(label: 'Sign In', onPressed: _submit, isLoading: _loading),
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(

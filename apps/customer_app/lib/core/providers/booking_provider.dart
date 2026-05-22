@@ -3,18 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking.dart';
 import '../models/car.dart';
 import '../models/time_slot.dart';
-import '../services/auth_service.dart';
 import '../services/booking_service.dart';
-
-// ── Active bookings stream ────────────────────────────────────────────────────
+import 'auth_provider.dart';
 
 final userBookingsProvider = StreamProvider<List<Booking>>((ref) {
-  final user = ref.watch(authServiceProvider).currentUser;
-  if (user == null) return Stream.value([]);
-  return ref.watch(bookingServiceProvider).watchUserBookings(user.uid);
+  final authState = ref.watch(authProvider);
+  final userId = authState.valueOrNull?.id;
+  if (userId == null) return Stream.value([]);
+  return ref.watch(bookingServiceProvider).watchUserBookings(userId);
 });
-
-// ── Available time slots ──────────────────────────────────────────────────────
 
 final availableSlotsProvider =
     FutureProvider.family<List<TimeSlot>, DateTime>((ref, date) {
@@ -65,10 +62,8 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
   BookingFlowNotifier() : super(const BookingFlowState());
 
   void setCar(Car car) => state = state.copyWith(car: car);
-  void setServiceType(ServiceType type) =>
-      state = state.copyWith(serviceType: type);
-  void setLocation(BookingLocation location) =>
-      state = state.copyWith(location: location);
+  void setServiceType(ServiceType type) => state = state.copyWith(serviceType: type);
+  void setLocation(BookingLocation location) => state = state.copyWith(location: location);
   void setSchedule(DateTime date, String slot) =>
       state = state.copyWith(selectedDate: date, selectedTimeSlot: slot);
   void reset() => state = const BookingFlowState();
@@ -76,20 +71,16 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
 
 final bookingFlowProvider =
     StateNotifierProvider<BookingFlowNotifier, BookingFlowState>(
-  (ref) => BookingFlowNotifier(),
-);
+        (ref) => BookingFlowNotifier());
 
-// ── Submit booking ────────────────────────────────────────────────────────────
-
-final submitBookingProvider =
-    FutureProvider.autoDispose<String?>((ref) async {
+final submitBookingProvider = FutureProvider.autoDispose<String?>((ref) async {
   final flow = ref.watch(bookingFlowProvider);
-  final user = ref.watch(authServiceProvider).currentUser;
+  final user = ref.watch(authProvider).valueOrNull;
   if (!flow.isComplete || user == null) return null;
 
   final booking = Booking(
     id: '',
-    userId: user.uid,
+    userId: user.id,
     car: flow.car!,
     serviceType: flow.serviceType!,
     location: flow.location!,
@@ -98,5 +89,9 @@ final submitBookingProvider =
     status: BookingStatus.pending,
     createdAt: DateTime.now(),
   );
-  return ref.watch(bookingServiceProvider).createBooking(booking);
+  return ref.watch(bookingServiceProvider).createBooking(
+        booking: booking,
+        customerName: user.name,
+        customerPhone: user.phone ?? '',
+      );
 });

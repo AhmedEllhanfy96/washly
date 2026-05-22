@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/models/booking.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/bookings_provider.dart';
-import '../../core/services/auth_service.dart';
 import '../../shared/widgets/status_badge.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -34,7 +34,7 @@ class DashboardScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () =>
-                ref.read(adminAuthServiceProvider).signOut(),
+                ref.read(adminAuthProvider.notifier).signOut(),
           ),
         ],
       ),

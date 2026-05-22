@@ -1,66 +1,77 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/booking.dart';
 import '../models/time_slot.dart';
+import '../services/ws_service.dart';
+import 'api_client.dart';
 
-final bookingServiceProvider =
-    Provider<BookingService>((ref) => BookingService());
+final bookingServiceProvider = Provider<BookingService>((ref) {
+  return BookingService(ref.read(wsServiceProvider));
+});
 
 class BookingService {
-  final _db = FirebaseFirestore.instance;
+  final Dio _dio = createDio();
+  final WsService _ws;
 
-  Future<String> createBooking(Booking booking) async {
-    final ref = await _db.collection('bookings').add(booking.toFirestore());
-    // Increment slot counter
-    await _incrementSlotCounter(
-      date: _dateKey(booking.scheduledAt),
-      time: booking.timeSlot,
-    );
-    return ref.id;
+  BookingService(this._ws);
+
+  Future<String> createBooking({
+    required Booking booking,
+    required String customerName,
+    required String customerPhone,
+  }) async {
+    final res = await _dio.post('/bookings', data: {
+      ...booking.toJson(),
+      'customerName': customerName,
+      'customerPhone': customerPhone,
+    });
+    return (res.data as Map<String, dynamic>)['id'] as String;
   }
 
-  Stream<List<Booking>> watchUserBookings(String userId) => _db
-      .collection('bookings')
-      .where('userId', isEqualTo: userId)
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snap) => snap.docs.map(Booking.fromFirestore).toList());
+  Stream<List<Booking>> watchUserBookings(String userId) {
+    final controller = StreamController<List<Booking>>();
 
-  Future<Booking?> getBooking(String id) async {
-    final doc = await _db.collection('bookings').doc(id).get();
-    if (!doc.exists) return null;
-    return Booking.fromFirestore(doc);
+    Future<void> fetch() async {
+      if (controller.isClosed) return;
+      try {
+        final res = await _dio.get('/bookings');
+        final all = (res.data as List)
+            .map((j) => Booking.fromJson(j as Map<String, dynamic>))
+            .toList();
+        if (!controller.isClosed) controller.add(all);
+      } catch (_) {}
+    }
+
+    fetch();
+    // Periodic fallback every 30s
+    final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetch());
+    // Instant update on WS event
+    final wsSub = _ws.events.listen((_) => fetch());
+
+    controller.onCancel = () {
+      timer.cancel();
+      wsSub.cancel();
+    };
+
+    return controller.stream;
   }
-
-  Future<void> cancelBooking(String bookingId) => _db
-      .collection('bookings')
-      .doc(bookingId)
-      .update({'status': BookingStatus.cancelled.name});
 
   Future<List<TimeSlot>> getAvailableSlots(DateTime date) async {
-    final key = _dateKey(date);
-    final doc = await _db.collection('time_slots').doc(key).get();
-    if (!doc.exists) return DaySlots.defaultSlots();
-    return DaySlots.fromFirestore(doc).slots;
+    try {
+      final res = await _dio.get('/slots/${_dateKey(date)}');
+      return (res.data as List)
+          .map((j) => TimeSlot.fromJson(j as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return TimeSlot.defaultSlots();
+    }
   }
 
-  Future<void> _incrementSlotCounter({
-    required String date,
-    required String time,
-  }) async {
-    final ref = _db.collection('time_slots').doc(date);
-    await _db.runTransaction((tx) async {
-      final snap = await tx.get(ref);
-      if (!snap.exists) return;
-      final slots = (snap.data()!['slots'] as List)
-          .map((s) => Map<String, dynamic>.from(s as Map))
-          .toList();
-      final idx = slots.indexWhere((s) => s['time'] == time);
-      if (idx != -1) slots[idx]['currentBookings'] = (slots[idx]['currentBookings'] as int) + 1;
-      tx.update(ref, {'slots': slots});
-    });
-  }
+  Future<void> cancelBooking(String id) =>
+      _dio.patch('/bookings/$id/status', data: {'status': 'cancelled'});
 
   String _dateKey(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';

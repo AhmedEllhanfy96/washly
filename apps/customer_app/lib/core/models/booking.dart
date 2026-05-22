@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'car.dart';
 
 enum ServiceType { exteriorOnly, fullService }
@@ -36,13 +35,13 @@ class BookingLocation {
     required this.longitude,
   });
 
-  factory BookingLocation.fromMap(Map<String, dynamic> map) => BookingLocation(
-        address: map['address'] as String,
-        latitude: (map['latitude'] as num).toDouble(),
-        longitude: (map['longitude'] as num).toDouble(),
+  factory BookingLocation.fromJson(Map<String, dynamic> json) => BookingLocation(
+        address: json['address'] as String? ?? '',
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
       );
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toJson() => {
         'address': address,
         'latitude': latitude,
         'longitude': longitude,
@@ -76,37 +75,34 @@ class Booking {
     required this.createdAt,
   });
 
-  factory Booking.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Booking(
-      id: doc.id,
-      userId: data['userId'] as String,
-      car: Car.fromMap(data['car'] as Map<String, dynamic>),
-      serviceType: data['serviceType'] == 'fullService'
-          ? ServiceType.fullService
-          : ServiceType.exteriorOnly,
-      location:
-          BookingLocation.fromMap(data['location'] as Map<String, dynamic>),
-      scheduledAt: (data['scheduledAt'] as Timestamp).toDate(),
-      timeSlot: data['timeSlot'] as String,
-      status: BookingStatus.fromString(data['status'] as String),
-      assignedTo: data['assignedTo'] as String?,
-      notes: data['notes'] as String?,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-    );
-  }
+  factory Booking.fromJson(Map<String, dynamic> json) => Booking(
+        id: json['id'] as String,
+        userId: json['userId'] as String? ?? '',
+        car: Car.fromMap((json['car'] as Map<String, dynamic>?) ?? {}),
+        serviceType: json['serviceType'] == 'fullService'
+            ? ServiceType.fullService
+            : ServiceType.exteriorOnly,
+        location: BookingLocation(
+          address: json['address'] as String? ?? '',
+          latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+          longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+        ),
+        scheduledAt: DateTime.parse(json['scheduledAt'] as String),
+        timeSlot: json['timeSlot'] as String? ?? '',
+        status: BookingStatus.fromString(json['status'] as String? ?? 'pending'),
+        assignedTo: json['assignedTo'] as String?,
+        notes: json['notes'] as String?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
 
-  Map<String, dynamic> toFirestore() => {
-        'userId': userId,
+  Map<String, dynamic> toJson() => {
         'car': car.toMap(),
         'serviceType': serviceType.name,
-        'location': location.toMap(),
-        'scheduledAt': Timestamp.fromDate(scheduledAt),
+        'address': location.address,
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'scheduledAt': scheduledAt.toIso8601String(),
         'timeSlot': timeSlot,
-        'status': status.name,
-        'assignedTo': assignedTo,
-        'notes': notes,
-        'createdAt': FieldValue.serverTimestamp(),
       };
 
   Booking copyWith({BookingStatus? status, String? assignedTo}) => Booking(
