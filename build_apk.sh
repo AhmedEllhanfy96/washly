@@ -5,7 +5,25 @@ APP=${1:-all}   # Usage: bash build_apk.sh [customer|admin|worker|all]
 
 APK_API_URL="${API_URL:-http://10.0.2.2:3000}"
 APK_WS_URL="${WS_URL:-ws://10.0.2.2:3000/ws}"
-WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')
+
+# Resolve the repo root relative to this script
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+APKS_DIR="${REPO_DIR}/apks"
+
+# Detect WSL vs native Linux
+is_wsl() { grep -qi microsoft /proc/version 2>/dev/null; }
+
+if is_wsl; then
+  WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')
+  WIN_DESKTOP="/mnt/c/Users/${WIN_USER}/OneDrive/Desktop"
+  if [ ! -d "$WIN_DESKTOP" ]; then
+    WIN_DESKTOP="/mnt/c/Users/${WIN_USER}/Desktop"
+  fi
+  DEST_DIR="$WIN_DESKTOP"
+else
+  DEST_DIR="$APKS_DIR"
+  mkdir -p "$DEST_DIR"
+fi
 
 echo "=== Step 1: Install Docker (skip if already installed) ==="
 if ! command -v docker &>/dev/null; then
@@ -20,17 +38,13 @@ if ! command -v docker &>/dev/null; then
   sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io
   sudo usermod -aG docker "$USER"
 fi
-sudo service docker start
+sudo service docker start 2>/dev/null || true
 
 build_apk() {
   local NAME=$1
-  local APP_DIR="/home/ahmedelhanafy/washly/apps/${NAME}_app"
+  local APP_DIR="${REPO_DIR}/apps/${NAME}_app"
   local OUT_APK="${APP_DIR}/build/app/outputs/flutter-apk/app-debug.apk"
-  local WIN_DESKTOP="/mnt/c/Users/${WIN_USER}/OneDrive/Desktop"
-  if [ ! -d "$WIN_DESKTOP" ]; then
-    WIN_DESKTOP="/mnt/c/Users/${WIN_USER}/Desktop"
-  fi
-  local DEST="${WIN_DESKTOP}/washly_${NAME}.apk"
+  local DEST="${DEST_DIR}/washly_${NAME}.apk"
 
   echo ""
   echo "=== Building ${NAME} APK ==="
@@ -69,7 +83,7 @@ case $APP in
 esac
 
 echo ""
-echo "Done! APKs are on your Windows Desktop."
+echo "Done! APKs saved to: ${DEST_DIR}"
 echo "NOTE: APKs connect to: ${APK_API_URL}"
-echo "      For a physical device on your WiFi, run:"
-echo "      API_URL=http://YOUR_PC_LAN_IP:3000 WS_URL=ws://YOUR_PC_LAN_IP:3000/ws bash build_apk.sh"
+echo "      To target a specific server:"
+echo "      API_URL=http://YOUR_SERVER_IP:3000 WS_URL=ws://YOUR_SERVER_IP:3000/ws bash build_apk.sh"
