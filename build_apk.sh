@@ -36,15 +36,16 @@ build_apk() {
   sudo docker run --rm \
     -v "${APP_DIR}:/app" \
     -v washly-android-sdk:/opt/android-sdk-linux \
-    -v washly-gradle:/root/.gradle \
-    -v washly-pub-cache:/root/.pub-cache \
+    -v "washly-gradle-${NAME}:/root/.gradle" \
+    -v "washly-pub-${NAME}:/root/.pub-cache" \
     -v washly-android-home:/root/.android \
     --dns 8.8.8.8 --dns 8.8.4.4 \
     -w /app \
     ghcr.io/cirruslabs/flutter:stable \
-    sh -c "flutter pub get && flutter build apk --debug \
-      --dart-define=API_URL=${APK_API_URL} \
-      --dart-define=WS_URL=${APK_WS_URL}"
+    sh -c "rm -f /root/.gradle/caches/journal-1/journal-1.lock && \
+           flutter pub get && flutter build apk --debug \
+           --dart-define=API_URL=${APK_API_URL} \
+           --dart-define=WS_URL=${APK_WS_URL}"
 
   sudo cp "$OUT_APK" "$DEST"
   echo "✓ ${NAME} APK → $DEST"
