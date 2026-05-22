@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -154,11 +155,19 @@ class TeamScreen extends ConsumerWidget {
                             );
                         ref.invalidate(workersProvider);
                         if (ctx.mounted) Navigator.pop(ctx);
-                      } on Exception catch (e) {
+                      } on DioException catch (e) {
                         setDialogState(() => loading = false);
                         if (ctx.mounted) {
+                          final msg = (e.response?.data as Map?)?['error'] as String?;
                           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                              content: Text(e.toString()),
+                              content: Text(msg ?? 'Failed to create worker'),
+                              backgroundColor: Colors.red));
+                        }
+                      } on Exception catch (_) {
+                        setDialogState(() => loading = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                              content: Text('Failed to create worker. Try again.'),
                               backgroundColor: Colors.red));
                         }
                       }

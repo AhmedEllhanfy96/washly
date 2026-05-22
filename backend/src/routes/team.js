@@ -6,7 +6,7 @@ export default async function (app) {
   // GET workers (users with role='worker') — used by admin assign dropdown
   app.get('/workers', auth, async () => {
     const { rows } = await pool.query(
-      "SELECT id, name, phone FROM users WHERE role = 'worker' ORDER BY name"
+      "SELECT id, name, phone, email FROM users WHERE role = 'worker' ORDER BY name"
     );
     return rows;
   });

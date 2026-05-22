@@ -23,14 +23,14 @@ export default async function (app) {
     return rows.map(toBooking);
   });
 
-  // POST create booking
+  // POST create booking (customers + admin manual entry)
   app.post('/', auth, async (req, reply) => {
     const { uid } = req.user;
-    const { car, serviceType, address, latitude = 0, longitude = 0, scheduledAt, timeSlot, customerName = '', customerPhone = '' } = req.body;
+    const { car, serviceType, address, latitude = 0, longitude = 0, scheduledAt, timeSlot, customerName = '', customerPhone = '', notes = '', source = 'app' } = req.body;
     const { rows } = await pool.query(
-      `INSERT INTO bookings (user_id, customer_name, customer_phone, car, service_type, address, latitude, longitude, scheduled_at, time_slot)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [uid, customerName, customerPhone, JSON.stringify(car), serviceType, address, latitude, longitude, scheduledAt, timeSlot]
+      `INSERT INTO bookings (user_id, customer_name, customer_phone, car, service_type, address, latitude, longitude, scheduled_at, time_slot, notes, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [uid, customerName, customerPhone, JSON.stringify(car), serviceType, address, latitude, longitude, scheduledAt, timeSlot, notes, source]
     );
     const booking = toBooking(rows[0]);
     broadcast({ type: 'booking_created', booking });
@@ -93,6 +93,7 @@ function toBooking(r) {
     status: r.status,
     assignedTo: r.assigned_to,
     notes: r.notes,
+    source: r.source ?? 'app',
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

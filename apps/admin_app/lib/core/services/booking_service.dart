@@ -118,6 +118,34 @@ class AdminBookingService {
   Future<void> deleteWorker(String workerId) =>
       _dio.delete('/team/workers/$workerId');
 
+  Future<void> createManualBooking({
+    required String customerName,
+    required String customerPhone,
+    required String source,
+    required Map<String, dynamic> car,
+    required String serviceType,
+    required String address,
+    required double latitude,
+    required double longitude,
+    required DateTime scheduledAt,
+    required String timeSlot,
+    String notes = '',
+  }) async {
+    await _dio.post('/bookings', data: {
+      'customerName': customerName,
+      'customerPhone': customerPhone,
+      'source': source,
+      'car': car,
+      'serviceType': serviceType,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      'scheduledAt': scheduledAt.toIso8601String(),
+      'timeSlot': timeSlot,
+      'notes': notes,
+    });
+  }
+
   Future<Map<String, int>> getStats() async {
     final all = await _dio.get('/bookings').then(
         (r) => (r.data as List).map((j) => AdminBooking.fromJson(j as Map<String, dynamic>)).toList());

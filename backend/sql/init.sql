@@ -25,8 +25,32 @@ CREATE TABLE IF NOT EXISTS bookings (
   status TEXT NOT NULL DEFAULT 'pending',
   assigned_to TEXT,
   notes TEXT DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'app',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'app';
+
+CREATE TABLE IF NOT EXISTS saved_cars (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  make TEXT NOT NULL,
+  model TEXT NOT NULL,
+  color TEXT NOT NULL,
+  plate_number TEXT NOT NULL,
+  year TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS saved_locations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  label TEXT NOT NULL DEFAULT 'Home',
+  address TEXT NOT NULL,
+  latitude DOUBLE PRECISION NOT NULL DEFAULT 0,
+  longitude DOUBLE PRECISION NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS team_members (

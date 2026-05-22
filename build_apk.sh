@@ -26,7 +26,11 @@ build_apk() {
   local NAME=$1
   local APP_DIR="/home/ahmedelhanafy/washly/apps/${NAME}_app"
   local OUT_APK="${APP_DIR}/build/app/outputs/flutter-apk/app-debug.apk"
-  local DEST="/mnt/c/Users/${WIN_USER}/Desktop/washly_${NAME}.apk"
+  local WIN_DESKTOP="/mnt/c/Users/${WIN_USER}/OneDrive/Desktop"
+  if [ ! -d "$WIN_DESKTOP" ]; then
+    WIN_DESKTOP="/mnt/c/Users/${WIN_USER}/Desktop"
+  fi
+  local DEST="${WIN_DESKTOP}/washly_${NAME}.apk"
 
   echo ""
   echo "=== Building ${NAME} APK ==="

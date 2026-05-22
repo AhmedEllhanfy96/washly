@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/models/job.dart';
 import '../../core/services/job_service.dart';
@@ -64,6 +65,23 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
     Clipboard.setData(ClipboardData(text: _job.address));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Address copied'), backgroundColor: Colors.green));
+  }
+
+  Future<void> _openGoogleMaps() async {
+    final Uri url;
+    if (_job.latitude != 0 && _job.longitude != 0) {
+      url = Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=${_job.latitude},${_job.longitude}');
+    } else {
+      final encoded = Uri.encodeComponent(_job.address);
+      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$encoded');
+    }
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Google Maps')));
+      }
+    }
   }
 
   @override
@@ -139,6 +157,21 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                               ]),
                             ),
                           ),
+                          Positioned(
+                            top: 12, right: 12,
+                            child: ElevatedButton.icon(
+                              onPressed: _openGoogleMaps,
+                              icon: const Icon(Icons.navigation, size: 18),
+                              label: const Text('Navigate'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.blue[700],
+                                elevation: 4,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
                         ])
                       : Container(
                           color: Colors.grey[100],
@@ -147,11 +180,30 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                             children: [
                               const Icon(Icons.location_off, size: 40, color: Colors.grey),
                               const SizedBox(height: 8),
-                              Text(_job.address, textAlign: TextAlign.center),
-                              TextButton.icon(
-                                onPressed: _copyAddress,
-                                icon: const Icon(Icons.copy, size: 16),
-                                label: const Text('Copy address'),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(_job.address, textAlign: TextAlign.center),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: _copyAddress,
+                                    icon: const Icon(Icons.copy, size: 16),
+                                    label: const Text('Copy'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: _openGoogleMaps,
+                                    icon: const Icon(Icons.navigation, size: 16),
+                                    label: const Text('Navigate'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue[700],
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

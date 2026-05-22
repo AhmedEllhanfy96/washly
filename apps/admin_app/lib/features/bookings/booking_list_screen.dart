@@ -43,6 +43,11 @@ class _BookingListScreenState extends ConsumerState<BookingListScreen> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/dashboard/bookings/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Manual Booking'),
+      ),
       body: allBookings.when(
         data: (bookings) {
           final filtered = _filter == null
@@ -113,7 +118,27 @@ class _BookingTile extends StatelessWidget {
             Text(fmt.format(booking.scheduledAt)),
           ],
         ),
-        trailing: StatusBadge(status: booking.status),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            StatusBadge(status: booking.status),
+            if (booking.source != 'app') ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green[100],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  booking.source == 'whatsapp' ? 'WhatsApp' : booking.source,
+                  style: TextStyle(fontSize: 10, color: Colors.green[800]),
+                ),
+              ),
+            ],
+          ],
+        ),
         isThreeLine: true,
       ),
     );

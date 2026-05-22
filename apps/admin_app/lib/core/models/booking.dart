@@ -36,6 +36,7 @@ class AdminBooking {
   final BookingStatus status;
   final String? assignedTo;
   final String? notes;
+  final String source;
   final DateTime createdAt;
   final String address;
 
@@ -54,6 +55,7 @@ class AdminBooking {
     required this.status,
     this.assignedTo,
     this.notes,
+    this.source = 'app',
     required this.createdAt,
   });
 
@@ -74,6 +76,7 @@ class AdminBooking {
         status: BookingStatus.fromString(json['status'] as String? ?? 'pending'),
         assignedTo: json['assignedTo'] as String?,
         notes: json['notes'] as String?,
+        source: json['source'] as String? ?? 'app',
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 

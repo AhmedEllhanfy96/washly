@@ -6,10 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/models/booking.dart';
+import '../../../core/models/saved_location.dart';
 import '../../../core/providers/booking_provider.dart';
+import '../../../core/providers/profile_provider.dart';
+import '../../../core/services/profile_service.dart';
 import '../../../shared/widgets/primary_button.dart';
 
-// Default center: Cairo, Egypt
 const _cairoCenter = LatLng(30.0444, 31.2357);
 
 class LocationStep extends ConsumerStatefulWidget {
@@ -23,10 +25,13 @@ class LocationStep extends ConsumerStatefulWidget {
 class _LocationStepState extends ConsumerState<LocationStep> {
   final _mapController = MapController();
   final _addressCtrl = TextEditingController();
+  final _labelCtrl = TextEditingController(text: 'Home');
 
   LatLng _center = _cairoCenter;
   bool _locating = false;
   bool _mapReady = false;
+  bool _saveLocation = false;
+  String? _selectedSavedLocationId;
 
   @override
   void initState() {
@@ -42,7 +47,26 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   void dispose() {
     _mapController.dispose();
     _addressCtrl.dispose();
+    _labelCtrl.dispose();
     super.dispose();
+  }
+
+  void _selectSavedLocation(SavedLocation loc) {
+    setState(() {
+      _selectedSavedLocationId = loc.id;
+      _center = LatLng(loc.latitude, loc.longitude);
+      _saveLocation = false;
+    });
+    _addressCtrl.text = loc.address;
+    if (_mapReady) _mapController.move(_center, 15);
+  }
+
+  Future<void> _deleteSavedLocation(String id) async {
+    await ref.read(profileServiceProvider).deleteLocation(id);
+    ref.invalidate(savedLocationsProvider);
+    if (_selectedSavedLocationId == id) {
+      setState(() => _selectedSavedLocationId = null);
+    }
   }
 
   Future<void> _goToMyLocation() async {
@@ -55,9 +79,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('Location denied. Move the map pin manually.')),
+            const SnackBar(content: Text('Location denied. Move the map pin manually.')),
           );
         }
         return;
@@ -66,12 +88,15 @@ class _LocationStepState extends ConsumerState<LocationStep> {
         desiredAccuracy: LocationAccuracy.high,
       );
       final point = LatLng(pos.latitude, pos.longitude);
-      setState(() => _center = point);
+      setState(() {
+        _center = point;
+        _selectedSavedLocationId = null;
+      });
       _mapController.move(point, 16);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
               kIsWeb
                   ? 'Allow location in your browser, or drag the map pin manually.'
@@ -85,7 +110,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
     }
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
     final address = _addressCtrl.text.trim();
     if (address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,12 +125,27 @@ class _LocationStepState extends ConsumerState<LocationStep> {
             longitude: _center.longitude,
           ),
         );
+
+    if (_saveLocation && _selectedSavedLocationId == null) {
+      final label = _labelCtrl.text.trim().isEmpty ? 'Home' : _labelCtrl.text.trim();
+      try {
+        await ref.read(profileServiceProvider).saveLocation(
+              label: label,
+              address: address,
+              latitude: _center.latitude,
+              longitude: _center.longitude,
+            );
+        ref.invalidate(savedLocationsProvider);
+      } catch (_) {}
+    }
+
     widget.onNext();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final savedLocsAsync = ref.watch(savedLocationsProvider);
 
     return Column(
       children: [
@@ -123,8 +163,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                 child: Text(
                   'Drag the map to move the pin to your exact location',
                   style: TextStyle(
-                      fontSize: 13,
-                      color: theme.colorScheme.onPrimaryContainer),
+                      fontSize: 13, color: theme.colorScheme.onPrimaryContainer),
                 ),
               ),
             ],
@@ -143,32 +182,30 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                   onMapReady: () => setState(() => _mapReady = true),
                   onPositionChanged: (pos, _) {
                     if (pos.center != null) {
-                      setState(() => _center = pos.center!);
+                      setState(() {
+                        _center = pos.center!;
+                        _selectedSavedLocationId = null;
+                      });
                     }
                   },
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.washly.customer',
                     maxZoom: 19,
                   ),
                 ],
               ),
-
-              // Fixed center pin
               const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.location_pin, color: Colors.red, size: 48),
-                    SizedBox(height: 24), // offset shadow
+                    SizedBox(height: 24),
                   ],
                 ),
               ),
-
-              // GPS button
               Positioned(
                 right: 12,
                 bottom: 12,
@@ -180,19 +217,15 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                       ? const SizedBox(
                           height: 18,
                           width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.my_location),
                 ),
               ),
-
-              // Coordinates chip
               Positioned(
                 left: 12,
                 bottom: 12,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
@@ -208,28 +241,102 @@ class _LocationStepState extends ConsumerState<LocationStep> {
           ),
         ),
 
-        // ── Address field + confirm ──────────────────────────────────────
+        // ── Bottom panel ─────────────────────────────────────────────────
         Container(
           color: theme.colorScheme.surface,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Saved locations row
+              savedLocsAsync.when(
+                data: (locs) {
+                  if (locs.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Saved locations',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 36,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: locs.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (_, i) {
+                            final loc = locs[i];
+                            final selected = _selectedSavedLocationId == loc.id;
+                            return GestureDetector(
+                              onLongPress: () => _deleteSavedLocation(loc.id),
+                              child: FilterChip(
+                                label: Text(loc.label),
+                                selected: selected,
+                                avatar: Icon(
+                                  loc.label.toLowerCase().contains('work')
+                                      ? Icons.work_outline
+                                      : Icons.home_outlined,
+                                  size: 16,
+                                ),
+                                onSelected: (_) => _selectSavedLocation(loc),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Long-press a chip to delete it',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      const SizedBox(height: 10),
+                    ],
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+
               const Text('Confirm your street address',
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
                 controller: _addressCtrl,
                 decoration: const InputDecoration(
-                  hintText:
-                      'e.g. 15 شارع التحرير، المعادي، القاهرة',
+                  hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
                   prefixIcon: Icon(Icons.edit_location_alt_outlined),
                   isDense: true,
                 ),
                 maxLines: 2,
+                onChanged: (_) => setState(() => _selectedSavedLocationId = null),
               ),
-              const SizedBox(height: 14),
+
+              // Save location option
+              if (_selectedSavedLocationId == null) ...[
+                const SizedBox(height: 6),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _saveLocation,
+                  onChanged: (v) => setState(() => _saveLocation = v ?? false),
+                  title: const Text('Save this location',
+                      style: TextStyle(fontSize: 14)),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  dense: true,
+                ),
+                if (_saveLocation)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 4),
+                    child: TextField(
+                      controller: _labelCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Label (e.g. Home, Work)',
+                        isDense: true,
+                        prefixIcon: Icon(Icons.label_outline, size: 18),
+                      ),
+                    ),
+                  ),
+              ],
+
+              const SizedBox(height: 12),
               PrimaryButton(label: 'Confirm Location', onPressed: _confirm),
             ],
           ),

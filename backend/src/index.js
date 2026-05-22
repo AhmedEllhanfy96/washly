@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import bookingRoutes from './routes/bookings.js';
 import teamRoutes from './routes/team.js';
 import slotsRoutes from './routes/slots.js';
+import profileRoutes from './routes/profile.js';
 import { registerWsRoutes } from './ws.js';
 
 const app = Fastify({ logger: true });
@@ -28,6 +29,7 @@ await app.register(authRoutes, { prefix: '/auth' });
 await app.register(bookingRoutes, { prefix: '/bookings' });
 await app.register(teamRoutes, { prefix: '/team' });
 await app.register(slotsRoutes, { prefix: '/slots' });
+await app.register(profileRoutes, { prefix: '/profile' });
 
 registerWsRoutes(app);
 
