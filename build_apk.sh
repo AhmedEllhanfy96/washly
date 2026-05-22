@@ -30,7 +30,7 @@ build_apk() {
 
   echo ""
   echo "=== Building ${NAME} APK ==="
-  sudo rm -rf "${APP_DIR}/.dart_tool" "${APP_DIR}/build"
+  sudo rm -rf "${APP_DIR}/.dart_tool" "${APP_DIR}/build" "${APP_DIR}/android/.gradle"
   rm -f "${APP_DIR}/pubspec.lock"
 
   sudo docker run --rm \
@@ -42,7 +42,8 @@ build_apk() {
     --dns 8.8.8.8 --dns 8.8.4.4 \
     -w /app \
     ghcr.io/cirruslabs/flutter:stable \
-    sh -c "rm -f /root/.gradle/caches/journal-1/journal-1.lock && \
+    sh -c "find /app/android -name '*.lock' -delete 2>/dev/null; \
+           rm -f /root/.gradle/caches/journal-1/journal-1.lock; \
            flutter pub get && flutter build apk --debug \
            --dart-define=API_URL=${APK_API_URL} \
            --dart-define=WS_URL=${APK_WS_URL}"
