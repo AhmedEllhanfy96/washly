@@ -2,9 +2,7 @@
 set -e
 
 APP=${1:-all}   # Usage: bash build_apk.sh [customer|admin|worker|all]
-
-APK_API_URL="${API_URL:-http://10.0.2.2:3000}"
-APK_WS_URL="${WS_URL:-ws://10.0.2.2:3000/ws}"
+# Server URL is now configured at runtime inside the app (Settings icon on login screen)
 
 # Resolve the repo root relative to this script
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -62,9 +60,7 @@ build_apk() {
     ghcr.io/cirruslabs/flutter:stable \
     sh -c "find /app/android -name '*.lock' -delete 2>/dev/null; \
            rm -f /root/.gradle/caches/journal-1/journal-1.lock; \
-           flutter pub get && flutter build apk --debug \
-           --dart-define=API_URL=${APK_API_URL} \
-           --dart-define=WS_URL=${APK_WS_URL}"
+           flutter pub get && flutter build apk --debug"
 
   sudo cp "$OUT_APK" "$DEST"
   echo "✓ ${NAME} APK → $DEST"
@@ -84,6 +80,5 @@ esac
 
 echo ""
 echo "Done! APKs saved to: ${DEST_DIR}"
-echo "NOTE: APKs connect to: ${APK_API_URL}"
-echo "      To target a specific server:"
-echo "      API_URL=http://YOUR_SERVER_IP:3000 WS_URL=ws://YOUR_SERVER_IP:3000/ws bash build_apk.sh"
+echo "NOTE: Server URL is set at runtime — tap the 🖥 icon on the login screen."
+echo "      Default: http://10.0.2.2:3000 (Android emulator → localhost)"

@@ -12,6 +12,7 @@ final wsServiceProvider = Provider<WsService>((ref) => WsService());
 class WsService {
   final _storage = const FlutterSecureStorage();
   WebSocketChannel? _channel;
+  String? _connectedUrl;
   final _controller = StreamController<Map<String, dynamic>>.broadcast();
   bool _disposed = false;
 
@@ -20,7 +21,9 @@ class WsService {
   Future<void> connect() async {
     if (_disposed) return;
     final token = await _storage.read(key: 'auth_token');
-    final uri = Uri.parse('$wsUrl${token != null ? '?token=$token' : ''}');
+    final wsBase = await getWsUrl();
+    _connectedUrl = wsBase;
+    final uri = Uri.parse('$wsBase${token != null ? '?token=$token' : ''}');
     try {
       _channel = WebSocketChannel.connect(uri);
       await _channel!.ready.timeout(const Duration(seconds: 5));

@@ -20,7 +20,8 @@ class WsService {
   Future<void> connect() async {
     if (_disposed) return;
     final token = await _storage.read(key: 'auth_token');
-    final uri = Uri.parse('$wsUrl${token != null ? '?token=$token' : ''}');
+    final wsBase = await getWsUrl();
+    final uri = Uri.parse('$wsBase${token != null ? '?token=$token' : ''}');
     try {
       _channel = WebSocketChannel.connect(uri);
       await _channel!.ready.timeout(const Duration(seconds: 5));
