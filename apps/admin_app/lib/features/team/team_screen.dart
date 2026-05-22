@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/models/team_member.dart';
+import '../../core/models/worker.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../core/services/booking_service.dart';
 
@@ -10,33 +10,46 @@ class TeamScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final members = ref.watch(teamMembersProvider);
+    final workers = ref.watch(workersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Team Members')),
+      appBar: AppBar(title: const Text('Workers')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddMemberDialog(context, ref),
+        onPressed: () => _showAddWorkerDialog(context, ref),
         icon: const Icon(Icons.person_add),
-        label: const Text('Add Member'),
+        label: const Text('Add Worker'),
       ),
-      body: members.when(
+      body: workers.when(
         data: (list) {
           if (list.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.group_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 12),
-                  Text('No team members yet', style: TextStyle(color: Colors.grey)),
+                  const Icon(Icons.engineering_outlined, size: 64, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  const Text('No workers yet', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  const Text('Add workers so you can assign bookings to them',
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddWorkerDialog(context, ref),
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Add First Worker'),
+                  ),
                 ],
               ),
             );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: list.length,
-            itemBuilder: (_, i) => _MemberCard(member: list[i], ref: ref),
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(workersProvider),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+              itemCount: list.length,
+              itemBuilder: (_, i) => _WorkerCard(worker: list[i], ref: ref),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -45,62 +58,128 @@ class TeamScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddMemberDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showAddWorkerDialog(BuildContext context, WidgetRef ref) async {
     final nameCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    bool loading = false;
 
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Add Team Member'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.engineering, size: 22),
+            SizedBox(width: 8),
+            Text('Add Worker Account'),
+          ]),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Full Name', prefixIcon: Icon(Icons.person_outlined)),
+                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                        labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined)),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                        labelText: 'Email (login)', prefixIcon: Icon(Icons.email_outlined)),
+                    validator: (v) =>
+                        (v == null || !v.contains('@')) ? 'Enter valid email' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: passCtrl,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                        labelText: 'Password', prefixIcon: Icon(Icons.lock_outlined)),
+                    validator: (v) =>
+                        (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Worker will use email + password to login to the Worker app.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone'),
-                keyboardType: TextInputType.phone,
-              ),
-            ],
+            ),
           ),
+          actions: [
+            TextButton(
+                onPressed: loading ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setDialogState(() => loading = true);
+                      try {
+                        await ref.read(adminBookingServiceProvider).createWorker(
+                              name: nameCtrl.text.trim(),
+                              email: emailCtrl.text.trim(),
+                              password: passCtrl.text,
+                              phone: phoneCtrl.text.trim(),
+                            );
+                        ref.invalidate(workersProvider);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      } on Exception catch (e) {
+                        setDialogState(() => loading = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                              content: Text(e.toString()),
+                              backgroundColor: Colors.red));
+                        }
+                      }
+                    },
+              child: loading
+                  ? const SizedBox(
+                      height: 18, width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Create Account'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              final member = TeamMember(
-                id: '',
-                name: nameCtrl.text.trim(),
-                phone: phoneCtrl.text.trim(),
-                isAvailable: true,
-              );
-              await ref.read(adminBookingServiceProvider).addTeamMember(member);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _MemberCard extends StatelessWidget {
-  final TeamMember member;
+class _WorkerCard extends StatelessWidget {
+  final Worker worker;
   final WidgetRef ref;
-
-  const _MemberCard({required this.member, required this.ref});
+  const _WorkerCard({required this.worker, required this.ref});
 
   @override
   Widget build(BuildContext context) {
@@ -108,21 +187,48 @@ class _MemberCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: member.isAvailable ? Colors.green[100] : Colors.grey[200],
+          backgroundColor: Colors.green[100],
           child: Text(
-            member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-            style: TextStyle(
-                color: member.isAvailable ? Colors.green[800] : Colors.grey),
+            worker.name.isNotEmpty ? worker.name[0].toUpperCase() : '?',
+            style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
           ),
         ),
-        title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: member.phone.isNotEmpty ? Text(member.phone) : null,
-        trailing: Switch(
-          value: member.isAvailable,
-          onChanged: (v) =>
-              ref.read(adminBookingServiceProvider).updateAvailability(member.id, v),
+        title: Text(worker.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (worker.phone.isNotEmpty)
+              Text(worker.phone, style: const TextStyle(fontSize: 13)),
+            if (worker.email != null)
+              Text(worker.email!, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          ],
         ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline, color: Colors.red),
+          onPressed: () => _confirmDelete(context),
+        ),
+        isThreeLine: worker.phone.isNotEmpty && worker.email != null,
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Worker'),
+        content: Text('Remove ${worker.name}? They will no longer be able to login.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(adminBookingServiceProvider).deleteWorker(worker.id);
+      ref.invalidate(workersProvider);
+    }
   }
 }

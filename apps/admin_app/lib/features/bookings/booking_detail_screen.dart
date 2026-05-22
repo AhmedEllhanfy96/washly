@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/models/booking.dart';
-import '../../core/models/team_member.dart';
+import '../../core/models/worker.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../core/services/booking_service.dart';
 import '../../shared/widgets/status_badge.dart';
@@ -19,7 +19,7 @@ class BookingDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookings = ref.watch(allBookingsProvider);
-    final team = ref.watch(teamMembersProvider);
+    final workers = ref.watch(workersProvider);
     final fmt = DateFormat('EEEE, MMMM d, yyyy • h:mm a');
 
     return bookings.when(
@@ -204,16 +204,14 @@ class BookingDetailScreen extends ConsumerWidget {
                                 fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                       const SizedBox(height: 12),
-                      team.when(
-                        data: (members) => _AssignSection(
+                      workers.when(
+                        data: (list) => _AssignSection(
                           booking: booking,
-                          teamMembers:
-                              members.where((m) => m.isAvailable).toList(),
+                          workers: list,
                           ref: ref,
                         ),
                         loading: () => const CircularProgressIndicator(),
-                        error: (_, __) =>
-                            const Text('Could not load team'),
+                        error: (_, __) => const Text('Could not load workers'),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -374,12 +372,12 @@ class _CopyMessageButton extends StatelessWidget {
 
 class _AssignSection extends StatefulWidget {
   final AdminBooking booking;
-  final List<TeamMember> teamMembers;
+  final List<Worker> workers;
   final WidgetRef ref;
 
   const _AssignSection({
     required this.booking,
-    required this.teamMembers,
+    required this.workers,
     required this.ref,
   });
 
@@ -401,7 +399,7 @@ class _AssignSectionState extends State<_AssignSection> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Booking confirmed & assigned!'),
+            content: Text('Booking confirmed & assigned to worker!'),
             backgroundColor: Colors.green),
       );
     }
@@ -409,22 +407,43 @@ class _AssignSectionState extends State<_AssignSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.teamMembers.isEmpty) {
-      return ElevatedButton.icon(
-        onPressed: _loading
-            ? null
-            : () async {
-                setState(() => _loading = true);
-                await widget.ref
-                    .read(adminBookingServiceProvider)
-                    .updateStatus(
-                        widget.booking.id, BookingStatus.confirmed);
-                setState(() => _loading = false);
-              },
-        icon: const Icon(Icons.check),
-        label: const Text('Approve Booking'),
-        style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 52)),
+    if (widget.workers.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange[200]!),
+            ),
+            child: Row(children: [
+              Icon(Icons.warning_amber, color: Colors.orange[700], size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('No workers yet. Go to Workers tab to create accounts.',
+                    style: TextStyle(fontSize: 13)),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _loading
+                ? null
+                : () async {
+                    setState(() => _loading = true);
+                    await widget.ref
+                        .read(adminBookingServiceProvider)
+                        .updateStatus(widget.booking.id, BookingStatus.confirmed);
+                    setState(() => _loading = false);
+                  },
+            icon: const Icon(Icons.check),
+            label: const Text('Approve Without Assigning'),
+            style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52)),
+          ),
+        ],
       );
     }
 
@@ -432,13 +451,25 @@ class _AssignSectionState extends State<_AssignSection> {
       children: [
         DropdownButtonFormField<String>(
           decoration: const InputDecoration(
-            labelText: 'Assign to Team Member',
-            prefixIcon: Icon(Icons.person_pin),
+            labelText: 'Assign to Worker',
+            prefixIcon: Icon(Icons.engineering),
+            border: OutlineInputBorder(),
           ),
           value: _selected,
-          items: widget.teamMembers
-              .map((m) =>
-                  DropdownMenuItem(value: m.id, child: Text(m.name)))
+          items: widget.workers
+              .map((w) => DropdownMenuItem(
+                    value: w.id,
+                    child: Row(children: [
+                      const Icon(Icons.person, size: 18, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Text(w.name),
+                      if (w.phone.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text('· ${w.phone}',
+                            style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                      ],
+                    ]),
+                  ))
               .toList(),
           onChanged: (v) => setState(() => _selected = v),
         ),
@@ -447,11 +478,10 @@ class _AssignSectionState extends State<_AssignSection> {
           onPressed: (_selected != null && !_loading) ? _assign : null,
           icon: _loading
               ? const SizedBox(
-                  height: 16,
-                  width: 16,
+                  height: 16, width: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.check),
-          label: const Text('Confirm & Assign'),
+              : const Icon(Icons.send),
+          label: const Text('Confirm & Assign to Worker'),
           style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 52)),
         ),

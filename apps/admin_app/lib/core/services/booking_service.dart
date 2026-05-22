@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/booking.dart';
 import '../models/team_member.dart';
+import '../models/worker.dart';
 import '../services/ws_service.dart';
 import 'api_client.dart';
 
@@ -88,6 +89,34 @@ class AdminBookingService {
 
   Future<void> deleteTeamMember(String memberId) =>
       _dio.delete('/team/$memberId');
+
+  // Workers (user accounts with role='worker')
+  Future<List<Worker>> getWorkers() async {
+    try {
+      final res = await _dio.get('/team/workers');
+      return (res.data as List).map((j) => Worker.fromJson(j as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<Worker> createWorker({
+    required String name,
+    required String email,
+    required String password,
+    String phone = '',
+  }) async {
+    final res = await _dio.post('/team/workers', data: {
+      'name': name,
+      'email': email,
+      'password': password,
+      'phone': phone,
+    });
+    return Worker.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteWorker(String workerId) =>
+      _dio.delete('/team/workers/$workerId');
 
   Future<Map<String, int>> getStats() async {
     final all = await _dio.get('/bookings').then(

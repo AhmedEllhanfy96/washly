@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/booking.dart';
 import '../models/team_member.dart';
-import '../models/worker.dart';
 import '../services/booking_service.dart';
 
 final allBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
@@ -10,11 +9,15 @@ final allBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
 });
 
 final pendingBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
-  return ref.watch(adminBookingServiceProvider).watchBookingsByStatus(BookingStatus.pending);
+  return ref
+      .watch(adminBookingServiceProvider)
+      .watchBookingsByStatus(BookingStatus.pending);
 });
 
 final confirmedBookingsProvider = StreamProvider<List<AdminBooking>>((ref) {
-  return ref.watch(adminBookingServiceProvider).watchBookingsByStatus(BookingStatus.confirmed);
+  return ref
+      .watch(adminBookingServiceProvider)
+      .watchBookingsByStatus(BookingStatus.confirmed);
 });
 
 final teamMembersProvider = StreamProvider<List<TeamMember>>((ref) {
@@ -23,8 +26,4 @@ final teamMembersProvider = StreamProvider<List<TeamMember>>((ref) {
 
 final dashboardStatsProvider = FutureProvider<Map<String, int>>((ref) {
   return ref.watch(adminBookingServiceProvider).getStats();
-});
-
-final workersProvider = FutureProvider<List<Worker>>((ref) {
-  return ref.watch(adminBookingServiceProvider).getWorkers();
 });
