@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/services/api_client.dart';
@@ -19,11 +20,14 @@ class ServerConfigButton extends StatelessWidget {
     if (!context.mounted) return;
 
     final ctrl = TextEditingController(text: current);
-    String? testResult;
-    bool testing = false;
+    String? statusMsg;
+    bool statusOk = false;
+    bool scanning = false;
+    double scanProgress = 0;
 
     await showDialog(
       context: context,
+      barrierDismissible: !scanning,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           title: const Row(children: [
@@ -45,8 +49,10 @@ class ServerConfigButton extends StatelessWidget {
                 ),
                 keyboardType: TextInputType.url,
                 autocorrect: false,
+                enabled: !scanning,
               ),
               const SizedBox(height: 10),
+
               // Presets
               Wrap(
                 spacing: 8,
@@ -54,84 +60,138 @@ class ServerConfigButton extends StatelessWidget {
                   ActionChip(
                     label: const Text('Emulator'),
                     avatar: const Icon(Icons.phone_android, size: 14),
-                    onPressed: () =>
-                        setState(() => ctrl.text = 'http://10.0.2.2:3000'),
+                    onPressed: scanning
+                        ? null
+                        : () => setState(() => ctrl.text = 'http://10.0.2.2:3000'),
                   ),
                   ActionChip(
                     label: const Text('Localhost'),
                     avatar: const Icon(Icons.computer, size: 14),
-                    onPressed: () =>
-                        setState(() => ctrl.text = 'http://localhost:3000'),
+                    onPressed: scanning
+                        ? null
+                        : () => setState(() => ctrl.text = 'http://localhost:3000'),
                   ),
                 ],
               ),
-              if (testResult != null) ...[
+
+              const SizedBox(height: 10),
+
+              // Scan button + progress
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: scanning
+                      ? null
+                      : () async {
+                          setState(() {
+                            scanning = true;
+                            scanProgress = 0;
+                            statusMsg = 'Scanning network…';
+                            statusOk = false;
+                          });
+                          final found = await discoverServer(
+                            onProgress: (done, total) {
+                              setState(() => scanProgress = done / total);
+                            },
+                          );
+                          if (found != null) {
+                            await saveServerUrl(found);
+                            setState(() {
+                              ctrl.text = found;
+                              statusMsg = '✓ Found server at $found';
+                              statusOk = true;
+                              scanning = false;
+                            });
+                          } else {
+                            setState(() {
+                              statusMsg = '✗ No Washly server found on this network';
+                              statusOk = false;
+                              scanning = false;
+                            });
+                          }
+                        },
+                  icon: scanning
+                      ? const SizedBox(
+                          height: 14,
+                          width: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.wifi_find, size: 18),
+                  label: Text(scanning ? 'Scanning…' : 'Scan Network'),
+                ),
+              ),
+
+              if (scanning)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: LinearProgressIndicator(value: scanProgress),
+                ),
+
+              // Status message
+              if (statusMsg != null) ...[
                 const SizedBox(height: 10),
                 Row(children: [
                   Icon(
-                    testResult!.startsWith('✓')
-                        ? Icons.check_circle
-                        : Icons.error_outline,
+                    statusOk ? Icons.check_circle : Icons.error_outline,
                     size: 16,
-                    color: testResult!.startsWith('✓')
-                        ? Colors.green
-                        : Colors.red,
+                    color: statusOk ? Colors.green : Colors.red,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(testResult!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: testResult!.startsWith('✓')
-                              ? Colors.green[700]
-                              : Colors.red[700],
-                        )),
+                    child: Text(
+                      statusMsg!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: statusOk ? Colors.green[700] : Colors.red[700],
+                      ),
+                    ),
                   ),
                 ]),
               ],
             ],
           ),
           actions: [
+            // Test connection
             TextButton(
-              onPressed: testing
+              onPressed: scanning
                   ? null
                   : () async {
                       setState(() {
-                        testing = true;
-                        testResult = null;
+                        statusMsg = 'Testing…';
+                        statusOk = false;
                       });
+                      final url = ctrl.text.trim().replaceAll(RegExp(r'/+$'), '');
                       try {
-                        final url =
-                            ctrl.text.trim().replaceAll(RegExp(r'/+$'), '');
-                        final dio = createDio();
+                        final dio = Dio(BaseOptions(
+                          connectTimeout: const Duration(seconds: 4),
+                          receiveTimeout: const Duration(seconds: 4),
+                        ));
+                        await dio.get('$url/health');
                         await saveServerUrl(url);
-                        await dio.get('/health').timeout(
-                              const Duration(seconds: 5));
-                        setState(() => testResult = '✓ Connected to $url');
+                        setState(() {
+                          statusMsg = '✓ Connected to $url';
+                          statusOk = true;
+                        });
                       } catch (e) {
-                        setState(() => testResult = '✗ ${e.toString().split('\n').first}');
-                      } finally {
-                        setState(() => testing = false);
+                        setState(() {
+                          statusMsg = '✗ ${e.toString().split('\n').first}';
+                          statusOk = false;
+                        });
                       }
                     },
-              child: testing
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Test'),
+              child: const Text('Test'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: scanning ? null : () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final url =
-                    ctrl.text.trim().replaceAll(RegExp(r'/+$'), '');
-                await saveServerUrl(url);
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
+              onPressed: scanning
+                  ? null
+                  : () async {
+                      final url = ctrl.text.trim().replaceAll(RegExp(r'/+$'), '');
+                      await saveServerUrl(url);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
               child: const Text('Save'),
             ),
           ],
