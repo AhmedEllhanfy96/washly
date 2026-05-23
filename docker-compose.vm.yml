@@ -1,0 +1,62 @@
+# Standalone deploy file for the remote VM.
+# No repo clone required — copy this file + a .env file to the VM and run:
+#
+#   docker compose -f docker-compose.vm.yml pull
+#   docker compose -f docker-compose.vm.yml up -d
+#
+# Required .env keys: DB_PASSWORD, JWT_SECRET
+# Images are always pulled fresh from the registry on every `up`.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: washly
+      POSTGRES_USER: washly
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-washly_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U washly"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/ahmedellhanfy96/washly/backend:latest
+    pull_policy: always
+    environment:
+      DATABASE_URL: postgres://washly:${DB_PASSWORD:-washly_secret}@postgres:5432/washly
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  customer-app:
+    image: ghcr.io/ahmedellhanfy96/washly/customer-app:latest
+    pull_policy: always
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+  admin-app:
+    image: ghcr.io/ahmedellhanfy96/washly/admin-app:latest
+    pull_policy: always
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+  worker-app:
+    image: ghcr.io/ahmedellhanfy96/washly/worker-app:latest
+    pull_policy: always
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -8,9 +8,8 @@
 #   2. Login to GitHub Container Registry:
 #        docker login ghcr.io -u ahmedellhanfy96 --password YOUR_PAT
 #        (PAT needs: read:packages)
-#   3. Clone the repo (for docker-compose.prod.yml):
-#        git clone https://github.com/AhmedEllhanfy96/washly.git
-#        cd washly
+#   3. Copy docker-compose.vm.yml and a .env file to the VM (no repo clone needed):
+#        scp docker-compose.vm.yml .env user@vm:~/washly/
 #   4. Run this script:
 #        bash vm-deploy.sh
 
@@ -32,19 +31,16 @@ REPO="washly"
 REGISTRY="ghcr.io/${GITHUB_USER}/${REPO}"
 
 echo "=== Pulling latest images ==="
-docker pull "${REGISTRY}/backend:latest"
-docker pull "${REGISTRY}/customer-app:latest"
-docker pull "${REGISTRY}/admin-app:latest"
-docker pull "${REGISTRY}/worker-app:latest"
+docker compose -f docker-compose.vm.yml pull
 
 echo ""
 echo "=== Restarting services ==="
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.vm.yml down
+docker compose -f docker-compose.vm.yml up -d
 
 echo ""
 echo "=== Running containers ==="
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.vm.yml ps
 
 echo ""
 echo "Done!"
