@@ -6,8 +6,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 const _storage = FlutterSecureStorage();
 const _port = 3000;
 
-// Default: public VM backend
-const defaultServerUrl = 'http://150.230.53.189:$_port';
+const defaultServerUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'http://150.230.53.189:3000',
+);
 
 Future<String> getApiUrl() async =>
     await _storage.read(key: 'server_url') ?? defaultServerUrl;
