@@ -12,16 +12,22 @@
 
 set -e
 
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Load .env from repo root
+if [ -f "${REPO_DIR}/.env" ]; then
+  set -a; source "${REPO_DIR}/.env"; set +a
+else
+  echo "ERROR: .env file not found at ${REPO_DIR}/.env"
+  echo "Copy .env.example to .env and fill in your values."
+  exit 1
+fi
+
 GITHUB_USER="ahmedellhanfy96"
 REPO="washly"
 REGISTRY="ghcr.io/${GITHUB_USER}/${REPO}"
 
-VM_IP="150.230.53.189"
-API_URL="http://${VM_IP}:3000"
-WS_URL="ws://${VM_IP}:3000/ws"
-
 TARGET=${1:-all}
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 build_and_push() {
   local NAME=$1

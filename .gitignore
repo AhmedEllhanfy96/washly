@@ -34,14 +34,12 @@ build/
 **/ios/Flutter/Flutter.framework
 **/ios/Flutter/Flutter.podspec
 
-# Env / secrets
+# Env / secrets — keep example template, ignore everything else
 .env
 .env.*
+!.env.example
 firebase.json
 .firebaserc
-
-# Env files — contain secrets
-.env
 
 
 # Firebase debug
