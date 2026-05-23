@@ -26,6 +26,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
       await _ws.connect();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -37,6 +38,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
       await _ws.connect();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 

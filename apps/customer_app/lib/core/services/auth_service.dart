@@ -28,9 +28,15 @@ class AuthService {
   }
 
   Future<void> signInWithEmail({required String email, required String password}) async {
-    final res = await _dio.post('/auth/login', data: {'email': email, 'password': password});
-    await _storage.write(key: 'auth_token', value: res.data['token'] as String);
-    _currentUser = UserProfile.fromJson(res.data['user'] as Map<String, dynamic>);
+    try {
+      final res = await _dio.post('/auth/login', data: {'email': email, 'password': password});
+      await _storage.write(key: 'auth_token', value: res.data['token'] as String);
+      _currentUser = UserProfile.fromJson(res.data['user'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = (e.response?.data as Map?)?['error'] as String?
+          ?? 'Login failed. Check your connection.';
+      throw Exception(msg);
+    }
   }
 
   Future<void> signUpWithEmail({
@@ -39,14 +45,20 @@ class AuthService {
     required String name,
     String? phone,
   }) async {
-    final res = await _dio.post('/auth/register', data: {
-      'email': email,
-      'password': password,
-      'name': name,
-      'phone': phone ?? '',
-    });
-    await _storage.write(key: 'auth_token', value: res.data['token'] as String);
-    _currentUser = UserProfile.fromJson(res.data['user'] as Map<String, dynamic>);
+    try {
+      final res = await _dio.post('/auth/register', data: {
+        'email': email,
+        'password': password,
+        'name': name,
+        'phone': phone ?? '',
+      });
+      await _storage.write(key: 'auth_token', value: res.data['token'] as String);
+      _currentUser = UserProfile.fromJson(res.data['user'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = (e.response?.data as Map?)?['error'] as String?
+          ?? 'Registration failed. Check your connection.';
+      throw Exception(msg);
+    }
   }
 
   Future<void> signOut() async {
