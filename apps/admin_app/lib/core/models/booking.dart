@@ -1,4 +1,4 @@
-enum ServiceType { exteriorOnly, fullService }
+enum ServiceType { exteriorOnly, interiorOnly, fullService }
 
 enum BookingStatus {
   pending,
@@ -65,9 +65,7 @@ class AdminBooking {
         customerName: json['customerName'] as String? ?? 'Unknown',
         customerPhone: json['customerPhone'] as String? ?? '',
         car: (json['car'] as Map<String, dynamic>?) ?? {},
-        serviceType: json['serviceType'] == 'fullService'
-            ? ServiceType.fullService
-            : ServiceType.exteriorOnly,
+        serviceType: _parseServiceType(json['serviceType'] as String?),
         latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
         longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
         address: json['address'] as String? ?? '',
@@ -79,6 +77,12 @@ class AdminBooking {
         source: json['source'] as String? ?? 'app',
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
+
+  static ServiceType _parseServiceType(String? v) => switch (v) {
+    'fullService' => ServiceType.fullService,
+    'interiorOnly' => ServiceType.interiorOnly,
+    _ => ServiceType.exteriorOnly,
+  };
 
   // Keep location map interface for booking_detail_screen compatibility
   Map<String, dynamic> get location => {

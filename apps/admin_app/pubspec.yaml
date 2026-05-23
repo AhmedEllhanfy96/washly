@@ -15,7 +15,7 @@ dependencies:
   # HTTP + WebSocket
   dio: ^5.4.3
   web_socket_channel: ^3.0.1
-  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.2.3
 
   # State management
   flutter_riverpod: ^2.5.1

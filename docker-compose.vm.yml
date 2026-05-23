@@ -103,6 +103,9 @@ services:
         INSERT INTO users (email, password_hash, name, role)
         VALUES ('admin@washly.com', crypt('admin123', gen_salt('bf')), 'Admin', 'admin')
         ON CONFLICT (email) DO NOTHING;
+        INSERT INTO users (email, password_hash, name, phone, role)
+        VALUES ('worker1@washly.com', crypt('worker123', gen_salt('bf')), 'Worker 1', '', 'worker')
+        ON CONFLICT (email) DO NOTHING;
         SQL
     restart: "no"
 

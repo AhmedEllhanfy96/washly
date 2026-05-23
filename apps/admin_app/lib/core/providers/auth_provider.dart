@@ -22,10 +22,11 @@ class AdminAuthNotifier extends StateNotifier<AsyncValue<AdminUserProfile?>> {
     try {
       await _svc.signIn(email: email, password: password);
       state = AsyncValue.data(_svc.currentUser);
-      await _ws.connect();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
+    _ws.connect();
   }
 
   Future<void> signOut() async {

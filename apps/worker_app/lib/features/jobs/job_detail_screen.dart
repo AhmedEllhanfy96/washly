@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/job.dart';
 import '../../core/services/job_service.dart';
 
@@ -45,8 +46,9 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
             status: status,
           ));
       if (mounted) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Status updated to ${status.label}'),
+          content: Text(l10n.statusUpdated(l10n.jobStatusLabel(status.name))),
           backgroundColor: Colors.green,
         ));
         if (status == JobStatus.completed) Navigator.pop(context);
@@ -64,7 +66,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
   void _copyAddress() {
     Clipboard.setData(ClipboardData(text: _job.address));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Address copied'), backgroundColor: Colors.green));
+      SnackBar(content: Text(context.l10n.addressCopied), backgroundColor: Colors.green));
   }
 
   Future<void> _openGoogleMaps() async {
@@ -79,13 +81,14 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open Google Maps')));
+          SnackBar(content: Text(context.l10n.couldNotOpenMaps)));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final fmt = DateFormat('EEEE, MMMM d, yyyy • h:mm a');
     final hasCoords = _job.latitude != 0 && _job.longitude != 0;
 
@@ -96,7 +99,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Chip(
-              label: Text(_job.status.label,
+              label: Text(l10n.jobStatusLabel(_job.status.name),
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
               backgroundColor: _statusColor(_job.status).withOpacity(0.15),
               side: BorderSide.none,
@@ -109,7 +112,6 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
           Expanded(
             child: ListView(
               children: [
-                // Map
                 SizedBox(
                   height: 220,
                   child: hasCoords
@@ -162,7 +164,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                             child: ElevatedButton.icon(
                               onPressed: _openGoogleMaps,
                               icon: const Icon(Icons.navigation, size: 18),
-                              label: const Text('Navigate'),
+                              label: Text(l10n.navigate),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.blue[700],
@@ -191,13 +193,13 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                                   TextButton.icon(
                                     onPressed: _copyAddress,
                                     icon: const Icon(Icons.copy, size: 16),
-                                    label: const Text('Copy'),
+                                    label: Text(l10n.copy),
                                   ),
                                   const SizedBox(width: 8),
                                   ElevatedButton.icon(
                                     onPressed: _openGoogleMaps,
                                     icon: const Icon(Icons.navigation, size: 16),
-                                    label: const Text('Navigate'),
+                                    label: Text(l10n.navigate),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue[700],
                                       foregroundColor: Colors.white,
@@ -214,24 +216,24 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      _Card(title: 'Customer', icon: Icons.person, rows: [
-                        _info('Name', _job.customerName),
+                      _Card(title: l10n.customer, icon: Icons.person, rows: [
+                        _info(l10n.name, _job.customerName),
                         if (_job.customerPhone.isNotEmpty)
-                          _info('Phone', _job.customerPhone),
+                          _info(l10n.phone, _job.customerPhone),
                       ]),
                       const SizedBox(height: 12),
-                      _Card(title: 'Car', icon: Icons.directions_car, rows: [
-                        _info('Vehicle', _job.carSummary),
+                      _Card(title: l10n.car, icon: Icons.directions_car, rows: [
+                        _info(l10n.vehicle, _job.carSummary),
                         if ((_job.car['plateNumber'] as String?)?.isNotEmpty == true)
-                          _info('Plate', _job.car['plateNumber'] as String),
+                          _info(l10n.plate, _job.car['plateNumber'] as String),
                         if ((_job.car['color'] as String?)?.isNotEmpty == true)
-                          _info('Color', _job.car['color'] as String),
+                          _info(l10n.color, _job.car['color'] as String),
                       ]),
                       const SizedBox(height: 12),
-                      _Card(title: 'Job', icon: Icons.cleaning_services, rows: [
-                        _info('Service', _job.serviceName),
-                        _info('Date', fmt.format(_job.scheduledAt)),
-                        _info('Slot', _job.timeSlot),
+                      _Card(title: l10n.job, icon: Icons.cleaning_services, rows: [
+                        _info(l10n.service, l10n.serviceNameFor(_job.serviceType)),
+                        _info(l10n.date, fmt.format(_job.scheduledAt)),
+                        _info(l10n.slot, _job.timeSlot),
                       ]),
                     ],
                   ),
@@ -240,7 +242,6 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
             ),
           ),
 
-          // Action buttons
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -256,7 +257,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                             child: ElevatedButton.icon(
                               onPressed: () => _updateStatus(JobStatus.inProgress),
                               icon: const Icon(Icons.play_arrow),
-                              label: const Text('Start Wash', style: TextStyle(fontSize: 16)),
+                              label: Text(l10n.startWash,
+                                  style: const TextStyle(fontSize: 16)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange,
                                 foregroundColor: Colors.white,
@@ -270,7 +272,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                             child: ElevatedButton.icon(
                               onPressed: () => _updateStatus(JobStatus.completed),
                               icon: const Icon(Icons.check_circle),
-                              label: const Text('Mark as Done', style: TextStyle(fontSize: 16)),
+                              label: Text(l10n.markAsDone,
+                                  style: const TextStyle(fontSize: 16)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
@@ -279,16 +282,17 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                           ),
                         ],
                         if (_job.status == JobStatus.pending)
-                          const Text('Waiting for admin confirmation',
-                              style: TextStyle(color: Colors.grey)),
+                          Text(l10n.waitingForAdmin,
+                              style: const TextStyle(color: Colors.grey)),
                         if (_job.status == JobStatus.completed)
-                          const Row(
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green),
-                              SizedBox(width: 8),
-                              Text('Job completed!',
-                                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              const Icon(Icons.check_circle, color: Colors.green),
+                              const SizedBox(width: 8),
+                              Text(l10n.jobCompleted,
+                                  style: const TextStyle(
+                                      color: Colors.green, fontWeight: FontWeight.bold)),
                             ],
                           ),
                       ],

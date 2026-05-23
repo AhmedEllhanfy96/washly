@@ -21,6 +21,7 @@ class WorkerAuthNotifier extends StateNotifier<AsyncValue<WorkerProfile?>> {
       state = AsyncValue.data(_svc.currentUser);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 

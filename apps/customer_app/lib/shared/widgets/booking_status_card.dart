@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 
 class BookingStatusCard extends StatelessWidget {
@@ -30,6 +31,7 @@ class BookingStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _statusColor(booking.status);
     final fmt = DateFormat('EEE, MMM d • h:mm a');
+    final l10n = context.l10n;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -43,7 +45,8 @@ class BookingStatusCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.directions_car, color: Theme.of(context).colorScheme.primary),
+                  Icon(Icons.directions_car,
+                      color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -53,8 +56,8 @@ class BookingStatusCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
@@ -62,10 +65,11 @@ class BookingStatusCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_statusIcon(booking.status), size: 14, color: color),
+                        Icon(_statusIcon(booking.status),
+                            size: 14, color: color),
                         const SizedBox(width: 4),
                         Text(
-                          booking.status.label,
+                          l10n.statusLabel(booking.status),
                           style: TextStyle(
                               color: color,
                               fontSize: 12,
@@ -78,9 +82,7 @@ class BookingStatusCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               _infoRow(Icons.cleaning_services,
-                  booking.serviceType == ServiceType.fullService
-                      ? 'Full Interior + Exterior'
-                      : 'Exterior Only'),
+                  l10n.serviceTypeName(booking.serviceType)),
               const SizedBox(height: 4),
               _infoRow(Icons.location_on, booking.location.address),
               const SizedBox(height: 4),

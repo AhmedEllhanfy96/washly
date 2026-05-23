@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,12 +10,22 @@ import '../../features/bookings/create_booking_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/team/team_screen.dart';
 
-final adminRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(adminAuthStateProvider);
+class _RouterNotifier extends ChangeNotifier {
+  _RouterNotifier(Ref ref) {
+    ref.listen(
+      adminAuthStateProvider,
+      (_, __) => notifyListeners(),
+    );
+  }
+}
 
+final adminRouterProvider = Provider<GoRouter>((ref) {
+  final notifier = _RouterNotifier(ref);
   return GoRouter(
-    initialLocation: '/dashboard',
+    refreshListenable: notifier,
+    initialLocation: '/login',
     redirect: (context, state) {
+      final authState = ref.read(adminAuthStateProvider);
       final isLoggedIn = authState.valueOrNull != null;
       final isLogin = state.matchedLocation == '/login';
       if (authState.isLoading) return null;

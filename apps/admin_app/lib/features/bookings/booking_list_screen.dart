@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../shared/widgets/status_badge.dart';
@@ -20,10 +21,11 @@ class _BookingListScreenState extends ConsumerState<BookingListScreen> {
   @override
   Widget build(BuildContext context) {
     final allBookings = ref.watch(allBookingsProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Bookings'),
+        title: Text(l10n.allBookings),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: SingleChildScrollView(
@@ -31,10 +33,12 @@ class _BookingListScreenState extends ConsumerState<BookingListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _FilterChip(label: 'All', selected: _filter == null,
+                _FilterChip(
+                    label: l10n.all,
+                    selected: _filter == null,
                     onTap: () => setState(() => _filter = null)),
                 ...BookingStatus.values.map((s) => _FilterChip(
-                      label: s.label,
+                      label: l10n.statusLabel(s),
                       selected: _filter == s,
                       onTap: () => setState(() => _filter = s),
                     )),
@@ -46,7 +50,7 @@ class _BookingListScreenState extends ConsumerState<BookingListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/dashboard/bookings/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Manual Booking'),
+        label: Text(l10n.manualBooking),
       ),
       body: allBookings.when(
         data: (bookings) {
@@ -54,8 +58,9 @@ class _BookingListScreenState extends ConsumerState<BookingListScreen> {
               ? bookings
               : bookings.where((b) => b.status == _filter).toList();
           if (filtered.isEmpty) {
-            return const Center(
-                child: Text('No bookings', style: TextStyle(color: Colors.grey)));
+            return Center(
+                child: Text(l10n.noBookings,
+                    style: const TextStyle(color: Colors.grey)));
           }
           return ListView.builder(
             padding: const EdgeInsets.all(12),
@@ -126,7 +131,8 @@ class _BookingTile extends StatelessWidget {
             if (booking.source != 'app') ...[
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.green[100],
                   borderRadius: BorderRadius.circular(4),

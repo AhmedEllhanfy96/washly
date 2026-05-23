@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/models/time_slot.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -45,8 +46,8 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking submitted! We\'ll confirm shortly.'),
+          SnackBar(
+            content: Text(context.l10n.bookingSubmitted),
             backgroundColor: Colors.green,
           ),
         );
@@ -56,7 +57,7 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Failed to submit: $e'),
+              content: Text(context.l10n.failedToSubmit(e.toString())),
               backgroundColor: Colors.red),
         );
       }
@@ -69,61 +70,57 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
   Widget build(BuildContext context) {
     final flow = ref.watch(bookingFlowProvider);
     final fmt = DateFormat('EEEE, MMMM d, yyyy');
-    final timeFmt = DateFormat('h:mm a');
+    final l10n = context.l10n;
 
     return Column(
       children: [
-        // Scrollable summary
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Confirm Booking',
-                    style:
-                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(l10n.confirmBooking,
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('Review your booking before submitting.',
+                Text(l10n.reviewBooking,
                     style: TextStyle(color: Colors.grey[600])),
                 const SizedBox(height: 24),
 
-                _Section(title: 'Car Details', children: [
-                  _Row('Make & Model',
+                _Section(title: l10n.stepCarDetails, children: [
+                  _Row(l10n.makeAndModel,
                       '${flow.car?.make ?? ''} ${flow.car?.model ?? ''}'),
-                  _Row('Color', flow.car?.color ?? ''),
-                  _Row('Plate', flow.car?.plateNumber ?? ''),
-                  if (flow.car?.year != null) _Row('Year', flow.car!.year!),
+                  _Row(l10n.color, flow.car?.color ?? ''),
+                  _Row(l10n.plate, flow.car?.plateNumber ?? ''),
+                  if (flow.car?.year != null)
+                    _Row(l10n.year, flow.car!.year!),
                 ]),
 
                 const SizedBox(height: 16),
-                _Section(title: 'Service', children: [
-                  _Row(
-                    'Type',
-                    flow.serviceType == ServiceType.fullService
-                        ? 'Full Interior + Exterior'
-                        : 'Exterior Only',
-                  ),
-                  _Row(
-                    'Price',
-                    flow.serviceType == ServiceType.fullService
-                        ? '250 EGP'
-                        : '195 EGP',
-                  ),
+                _Section(title: l10n.serviceLabel, children: [
+                  _Row(l10n.serviceType,
+                      flow.serviceType != null
+                          ? l10n.serviceTypeName(flow.serviceType!)
+                          : ''),
+                  _Row(l10n.price,
+                      flow.serviceType != null
+                          ? l10n.serviceTypePrice(flow.serviceType!)
+                          : ''),
                 ]),
 
                 const SizedBox(height: 16),
-                _Section(title: 'Location', children: [
-                  _Row('Address', flow.location?.address ?? ''),
+                _Section(title: l10n.stepLocation, children: [
+                  _Row(l10n.address, flow.location?.address ?? ''),
                 ]),
 
                 const SizedBox(height: 16),
-                _Section(title: 'Schedule', children: [
+                _Section(title: l10n.schedule, children: [
                   if (flow.selectedDate != null)
-                    _Row('Date', fmt.format(flow.selectedDate!)),
+                    _Row(l10n.date, fmt.format(flow.selectedDate!)),
                   if (flow.selectedTimeSlot != null)
                     _Row(
-                      'Window',
+                      l10n.window,
                       TimeSlot(
                         startTime: flow.selectedTimeSlot!,
                         endTime:
@@ -139,7 +136,6 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
           ),
         ),
 
-        // Fixed submit button
         Container(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           decoration: BoxDecoration(
@@ -153,7 +149,7 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
             ],
           ),
           child: PrimaryButton(
-            label: 'Submit Booking',
+            label: l10n.submitBooking,
             onPressed: _confirm,
             isLoading: _loading,
             icon: Icons.check,
@@ -207,7 +203,7 @@ class _Row extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 110,
             child: Text(label,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13)),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 
 class StatusBadge extends StatelessWidget {
@@ -38,7 +39,7 @@ class StatusBadge extends StatelessWidget {
           Icon(_icon, size: 14, color: _color),
           const SizedBox(width: 4),
           Text(
-            status.label,
+            context.l10n.statusLabel(status),
             style: TextStyle(
                 color: _color, fontSize: 12, fontWeight: FontWeight.w600),
           ),

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/l10n/app_localizations.dart';
+import '../../core/models/booking.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../core/services/booking_service.dart';
 
@@ -36,16 +38,11 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     'Blue', 'Green', 'Yellow', 'Orange', 'Brown',
   ];
 
-  static const _slots = [
-    '08:00', '10:00', '12:00', '14:00', '16:00',
-  ];
+  static const _slots = ['08:00', '10:00', '12:00', '14:00', '16:00'];
 
-  static const _sources = {
-    'whatsapp': ('WhatsApp', Icons.chat, Colors.green),
-    'phone': ('Phone Call', Icons.phone, Colors.blue),
-    'walkin': ('Walk-in', Icons.directions_walk, Colors.orange),
-    'other': ('Other', Icons.more_horiz, Colors.grey),
-  };
+  static const _sourceKeys = ['whatsapp', 'phone', 'walkin', 'other'];
+  static const _sourceIcons = [Icons.chat, Icons.phone, Icons.directions_walk, Icons.more_horiz];
+  static const _sourceColors = [Colors.green, Colors.blue, Colors.orange, Colors.grey];
 
   @override
   void dispose() {
@@ -74,7 +71,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedColor == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a car color')),
+        SnackBar(content: Text(context.l10n.selectCarColor)),
       );
       return;
     }
@@ -102,8 +99,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       if (mounted) {
         ref.invalidate(allBookingsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking created successfully'),
+          SnackBar(
+            content: Text(context.l10n.bookingCreated),
             backgroundColor: Colors.green,
           ),
         );
@@ -122,11 +119,14 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final dateFmt = DateFormat('EEEE, MMM d, yyyy');
 
+    final sourceLabels = ['WhatsApp', l10n.sourcePhone, l10n.sourceWalkIn, l10n.sourceOther];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('New Manual Booking')),
+      appBar: AppBar(title: Text(l10n.newManualBooking)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -134,14 +134,16 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Source ─────────────────────────────────────────────────
-              _SectionHeader(icon: Icons.source, label: 'Booking Source'),
+              _SectionHeader(icon: Icons.source, label: l10n.bookingSource),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
-                children: _sources.entries.map((e) {
-                  final (label, icon, color) = e.value;
-                  final selected = _source == e.key;
+                children: List.generate(_sourceKeys.length, (i) {
+                  final key = _sourceKeys[i];
+                  final label = sourceLabels[i];
+                  final icon = _sourceIcons[i];
+                  final color = _sourceColors[i];
+                  final selected = _source == key;
                   return ChoiceChip(
                     avatar: Icon(icon, size: 16,
                         color: selected ? Colors.white : color),
@@ -151,50 +153,48 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     labelStyle: TextStyle(
                         color: selected ? Colors.white : null,
                         fontWeight: selected ? FontWeight.w600 : null),
-                    onSelected: (_) => setState(() => _source = e.key),
+                    onSelected: (_) => setState(() => _source = key),
                   );
-                }).toList(),
+                }),
               ),
 
               const SizedBox(height: 20),
 
-              // ── Customer ───────────────────────────────────────────────
-              _SectionHeader(icon: Icons.person_outline, label: 'Customer'),
+              _SectionHeader(icon: Icons.person_outline, label: l10n.customer),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Customer Name',
-                  prefixIcon: Icon(Icons.person_outlined),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.customerName,
+                  prefixIcon: const Icon(Icons.person_outlined),
+                  border: const OutlineInputBorder(),
                 ),
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _phoneCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.phoneNumber,
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.phone,
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
               ),
 
               const SizedBox(height: 20),
 
-              // ── Car ────────────────────────────────────────────────────
-              _SectionHeader(icon: Icons.directions_car_outlined, label: 'Car Details'),
+              _SectionHeader(icon: Icons.directions_car_outlined, label: l10n.carDetails),
               const SizedBox(height: 10),
               Row(children: [
                 Expanded(
                   child: TextFormField(
                     controller: _makeCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Make', border: OutlineInputBorder()),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    decoration: InputDecoration(
+                        labelText: l10n.make, border: const OutlineInputBorder()),
+                    validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
                     textCapitalization: TextCapitalization.words,
                   ),
                 ),
@@ -202,9 +202,9 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _modelCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Model', border: OutlineInputBorder()),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    decoration: InputDecoration(
+                        labelText: l10n.model, border: const OutlineInputBorder()),
+                    validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
                     textCapitalization: TextCapitalization.words,
                   ),
                 ),
@@ -214,9 +214,9 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _plateCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Plate Number', border: OutlineInputBorder()),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    decoration: InputDecoration(
+                        labelText: l10n.plateNumber, border: const OutlineInputBorder()),
+                    validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
                     textCapitalization: TextCapitalization.none,
                     textAlign: TextAlign.right,
                   ),
@@ -225,14 +225,14 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _yearCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Year (opt.)', border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                        labelText: l10n.yearOpt, border: const OutlineInputBorder()),
                     keyboardType: TextInputType.number,
                   ),
                 ),
               ]),
               const SizedBox(height: 12),
-              const Text('Color', style: TextStyle(fontWeight: FontWeight.w500)),
+              Text(l10n.colorLabel, style: const TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -246,13 +246,12 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Service ────────────────────────────────────────────────
-              _SectionHeader(icon: Icons.cleaning_services_outlined, label: 'Service'),
+              _SectionHeader(icon: Icons.cleaning_services_outlined, label: l10n.service),
               const SizedBox(height: 10),
               Row(children: [
                 Expanded(
                   child: _ServiceCard(
-                    title: 'Exterior Only',
+                    title: l10n.serviceTypeName(ServiceType.exteriorOnly),
                     price: '195 EGP',
                     selected: _serviceType == 'exteriorOnly',
                     onTap: () => setState(() => _serviceType = 'exteriorOnly'),
@@ -261,18 +260,24 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _ServiceCard(
-                    title: 'Full Service',
-                    price: '250 EGP',
-                    selected: _serviceType == 'fullService',
-                    onTap: () => setState(() => _serviceType = 'fullService'),
+                    title: l10n.serviceTypeName(ServiceType.interiorOnly),
+                    price: '220 EGP',
+                    selected: _serviceType == 'interiorOnly',
+                    onTap: () => setState(() => _serviceType = 'interiorOnly'),
                   ),
                 ),
               ]),
+              const SizedBox(height: 10),
+              _ServiceCard(
+                title: l10n.serviceTypeName(ServiceType.fullService),
+                price: '250 EGP',
+                selected: _serviceType == 'fullService',
+                onTap: () => setState(() => _serviceType = 'fullService'),
+              ),
 
               const SizedBox(height: 20),
 
-              // ── Schedule ───────────────────────────────────────────────
-              _SectionHeader(icon: Icons.calendar_today_outlined, label: 'Schedule'),
+              _SectionHeader(icon: Icons.calendar_today_outlined, label: l10n.scheduleLabel),
               const SizedBox(height: 10),
               InkWell(
                 onTap: _pickDate,
@@ -294,7 +299,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text('Time Slot', style: TextStyle(fontWeight: FontWeight.w500)),
+              Text(l10n.timeSlot, style: const TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -307,31 +312,29 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Location ───────────────────────────────────────────────
-              _SectionHeader(icon: Icons.location_on_outlined, label: 'Location'),
+              _SectionHeader(icon: Icons.location_on_outlined, label: l10n.location),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _addressCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Address',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.address,
+                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  border: const OutlineInputBorder(),
                   hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
                 ),
                 maxLines: 2,
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
               ),
 
               const SizedBox(height: 20),
 
-              // ── Notes ──────────────────────────────────────────────────
-              _SectionHeader(icon: Icons.note_alt_outlined, label: 'Notes (optional)'),
+              _SectionHeader(icon: Icons.note_alt_outlined, label: l10n.notesOptional),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _notesCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Any special instructions…',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  hintText: l10n.notesHint,
                 ),
                 maxLines: 3,
               ),
@@ -349,7 +352,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                           width: 18,
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.add_circle_outline),
-                  label: const Text('Create Booking', style: TextStyle(fontSize: 16)),
+                  label: Text(l10n.createBookingBtn, style: const TextStyle(fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 24),

@@ -1,6 +1,6 @@
 import 'car.dart';
 
-enum ServiceType { exteriorOnly, fullService }
+enum ServiceType { exteriorOnly, interiorOnly, fullService }
 
 enum BookingStatus {
   pending,
@@ -79,9 +79,7 @@ class Booking {
         id: json['id'] as String,
         userId: json['userId'] as String? ?? '',
         car: Car.fromMap((json['car'] as Map<String, dynamic>?) ?? {}),
-        serviceType: json['serviceType'] == 'fullService'
-            ? ServiceType.fullService
-            : ServiceType.exteriorOnly,
+        serviceType: _parseServiceType(json['serviceType'] as String?),
         location: BookingLocation(
           address: json['address'] as String? ?? '',
           latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
@@ -94,6 +92,12 @@ class Booking {
         notes: json['notes'] as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
+
+  static ServiceType _parseServiceType(String? v) => switch (v) {
+    'fullService' => ServiceType.fullService,
+    'interiorOnly' => ServiceType.interiorOnly,
+    _ => ServiceType.exteriorOnly,
+  };
 
   Map<String, dynamic> toJson() => {
         'car': car.toMap(),

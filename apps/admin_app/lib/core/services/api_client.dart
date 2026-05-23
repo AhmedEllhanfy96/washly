@@ -1,9 +1,22 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-const _storage = FlutterSecureStorage();
+SharedPreferences? _prefsCache;
+
+Future<SharedPreferences> _getPrefs() async =>
+    _prefsCache ??= await SharedPreferences.getInstance();
+
+Future<String?> readPref(String key) async =>
+    (await _getPrefs()).getString(key);
+
+Future<void> writePref(String key, String value) async =>
+    (await _getPrefs()).setString(key, value);
+
+Future<void> deletePref(String key) async =>
+    (await _getPrefs()).remove(key);
+
 const _port = 3000;
 
 const defaultServerUrl = String.fromEnvironment(
@@ -12,7 +25,7 @@ const defaultServerUrl = String.fromEnvironment(
 );
 
 Future<String> getApiUrl() async =>
-    await _storage.read(key: 'server_url') ?? defaultServerUrl;
+    await readPref('server_url') ?? defaultServerUrl;
 
 Future<String> getWsUrl() async {
   final api = await getApiUrl();
@@ -24,13 +37,12 @@ Future<String> getWsUrl() async {
 
 Future<void> saveServerUrl(String url) async {
   final clean = url.trim().replaceAll(RegExp(r'/+$'), '');
-  await _storage.write(key: 'server_url', value: clean);
+  await writePref('server_url', clean);
 }
 
 /// Scans every host on the device's own /24 subnet in parallel.
 /// Returns the first URL that responds to GET /health, or null.
 Future<String?> discoverServer({void Function(int done, int total)? onProgress}) async {
-  // Collect all IPv4 subnets this device is on
   final subnets = <String>{};
   try {
     final interfaces = await NetworkInterface.list(
@@ -56,7 +68,6 @@ Future<String?> discoverServer({void Function(int done, int total)? onProgress})
     }
   }
 
-  // Also try emulator alias and localhost in case we're on desktop/web
   candidates.insertAll(0, [
     'http://10.0.2.2:$_port',
     'http://localhost:$_port',
@@ -66,7 +77,6 @@ Future<String?> discoverServer({void Function(int done, int total)? onProgress})
   final total = candidates.length;
   int done = 0;
 
-  // Probe in batches of 30 so we don't flood the network
   const batchSize = 30;
   for (int i = 0; i < candidates.length; i += batchSize) {
     final batch = candidates.skip(i).take(batchSize).toList();
@@ -97,7 +107,7 @@ Dio createDio() {
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) async {
       options.baseUrl = await getApiUrl();
-      final token = await _storage.read(key: 'auth_token');
+      final token = await readPref('auth_token');
       if (token != null) options.headers['Authorization'] = 'Bearer $token';
       handler.next(options);
     },

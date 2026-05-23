@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/bookings_provider.dart';
@@ -16,19 +17,20 @@ class DashboardScreen extends ConsumerWidget {
     final stats = ref.watch(dashboardStatsProvider);
     final pending = ref.watch(pendingBookingsProvider);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Washly Admin'),
+        title: Text(l10n.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.group),
-            tooltip: 'Team',
+            tooltip: l10n.workers,
             onPressed: () => context.go('/dashboard/team'),
           ),
           IconButton(
             icon: const Icon(Icons.list_alt),
-            tooltip: 'All Bookings',
+            tooltip: l10n.allBookings,
             onPressed: () => context.go('/dashboard/bookings'),
           ),
           IconButton(
@@ -43,24 +45,23 @@ class DashboardScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Stats row
             stats.when(
               data: (s) => Row(
                 children: [
                   _StatCard(
-                      label: 'Pending',
+                      label: l10n.pendingLabel,
                       value: '${s['pending']}',
                       color: Colors.orange,
                       icon: Icons.hourglass_empty),
                   const SizedBox(width: 12),
                   _StatCard(
-                      label: 'Confirmed',
+                      label: l10n.confirmedLabel,
                       value: '${s['confirmed']}',
                       color: Colors.blue,
                       icon: Icons.check_circle_outline),
                   const SizedBox(width: 12),
                   _StatCard(
-                      label: 'Today',
+                      label: l10n.todayLabel,
                       value: '${s['today']}',
                       color: Colors.green,
                       icon: Icons.today),
@@ -75,12 +76,12 @@ class DashboardScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Pending Approvals',
-                    style: TextStyle(
+                Text(l10n.pendingApprovals,
+                    style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton(
                   onPressed: () => context.go('/dashboard/bookings'),
-                  child: const Text('View all'),
+                  child: Text(l10n.viewAll),
                 ),
               ],
             ),
@@ -89,12 +90,12 @@ class DashboardScreen extends ConsumerWidget {
             pending.when(
               data: (list) {
                 if (list.isEmpty) {
-                  return const Card(
+                  return Card(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Center(
-                        child: Text('No pending bookings',
-                            style: TextStyle(color: Colors.grey)),
+                        child: Text(l10n.noPendingBookings,
+                            style: const TextStyle(color: Colors.grey)),
                       ),
                     ),
                   );
@@ -147,7 +148,8 @@ class _StatCard extends StatelessWidget {
                       color: color)),
               const SizedBox(height: 4),
               Text(label,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  style:
+                      TextStyle(color: Colors.grey[600], fontSize: 12)),
             ],
           ),
         ),
@@ -164,6 +166,7 @@ class _PendingBookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fmt = DateFormat('EEE, MMM d • h:mm a');
+    final l10n = context.l10n;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -189,12 +192,8 @@ class _PendingBookingCard extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               _Info(Icons.directions_car, booking.carSummary),
-              _Info(
-                Icons.cleaning_services,
-                booking.serviceType == ServiceType.fullService
-                    ? 'Full Service'
-                    : 'Exterior Only',
-              ),
+              _Info(Icons.cleaning_services,
+                  l10n.serviceTypeName(booking.serviceType)),
               _Info(Icons.location_on, booking.address),
               _Info(Icons.calendar_today,
                   fmt.format(booking.scheduledAt)),

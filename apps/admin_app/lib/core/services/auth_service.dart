@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api_client.dart';
 
@@ -22,25 +21,24 @@ class AdminUserProfile {
 
 class AdminAuthService {
   final Dio _dio = createDio();
-  final _storage = const FlutterSecureStorage();
   AdminUserProfile? _currentUser;
 
   AdminUserProfile? get currentUser => _currentUser;
 
   Future<AdminUserProfile?> init() async {
-    final token = await _storage.read(key: 'auth_token');
+    final token = await readPref('auth_token');
     if (token == null) return null;
     try {
       final res = await _dio.get('/auth/me');
       final user = AdminUserProfile.fromJson(res.data as Map<String, dynamic>);
       if (user.role != 'admin') {
-        await _storage.delete(key: 'auth_token');
+        await deletePref('auth_token');
         return null;
       }
       _currentUser = user;
       return _currentUser;
     } catch (_) {
-      await _storage.delete(key: 'auth_token');
+      await deletePref('auth_token');
       return null;
     }
   }
@@ -51,12 +49,12 @@ class AdminAuthService {
     if (user.role != 'admin') {
       throw Exception('Access denied. This account does not have admin privileges.');
     }
-    await _storage.write(key: 'auth_token', value: res.data['token'] as String);
+    await writePref('auth_token', res.data['token'] as String);
     _currentUser = user;
   }
 
   Future<void> signOut() async {
-    await _storage.delete(key: 'auth_token');
+    await deletePref('auth_token');
     _currentUser = null;
   }
 }

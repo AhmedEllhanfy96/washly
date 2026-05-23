@@ -8,7 +8,7 @@ class WashlyAdminApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(adminRouterProvider);
+    final router = ref.read(adminRouterProvider);
     return MaterialApp.router(
       title: 'Washly Admin',
       debugShowCheckedModeBanner: false,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/models/saved_location.dart';
 import '../../../core/providers/booking_provider.dart';
@@ -70,6 +71,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   }
 
   Future<void> _goToMyLocation() async {
+    final l10n = context.l10n;
     setState(() => _locating = true);
     try {
       var permission = await Geolocator.checkPermission();
@@ -79,7 +81,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location denied. Move the map pin manually.')),
+            SnackBar(content: Text(l10n.locationDenied)),
           );
         }
         return;
@@ -98,9 +100,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              kIsWeb
-                  ? 'Allow location in your browser, or drag the map pin manually.'
-                  : 'Could not get GPS. Drag the pin manually.',
+              kIsWeb ? context.l10n.locationDeniedBrowser : context.l10n.couldNotGetGps,
             ),
           ),
         );
@@ -111,10 +111,11 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   }
 
   Future<void> _confirm() async {
+    final l10n = context.l10n;
     final address = _addressCtrl.text.trim();
     if (address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your street address.')),
+        SnackBar(content: Text(l10n.enterStreetAddress)),
       );
       return;
     }
@@ -146,10 +147,11 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final savedLocsAsync = ref.watch(savedLocationsProvider);
+    final l10n = context.l10n;
 
     return Column(
       children: [
-        // ── Instruction bar ──────────────────────────────────────────────
+        // Instruction bar
         Container(
           width: double.infinity,
           color: theme.colorScheme.primaryContainer,
@@ -161,16 +163,17 @@ class _LocationStepState extends ConsumerState<LocationStep> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Drag the map to move the pin to your exact location',
+                  l10n.dragMapPin,
                   style: TextStyle(
-                      fontSize: 13, color: theme.colorScheme.onPrimaryContainer),
+                      fontSize: 13,
+                      color: theme.colorScheme.onPrimaryContainer),
                 ),
               ),
             ],
           ),
         ),
 
-        // ── Map ──────────────────────────────────────────────────────────
+        // Map
         Expanded(
           child: Stack(
             children: [
@@ -225,7 +228,8 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                 left: 12,
                 bottom: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
@@ -241,7 +245,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
           ),
         ),
 
-        // ── Bottom panel ─────────────────────────────────────────────────
+        // Bottom panel
         Container(
           color: theme.colorScheme.surface,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -249,25 +253,27 @@ class _LocationStepState extends ConsumerState<LocationStep> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Saved locations row
               savedLocsAsync.when(
                 data: (locs) {
                   if (locs.isEmpty) return const SizedBox.shrink();
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Saved locations',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(l10n.savedLocations,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 13)),
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 36,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: locs.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 8),
                           itemBuilder: (_, i) {
                             final loc = locs[i];
-                            final selected = _selectedSavedLocationId == loc.id;
+                            final selected =
+                                _selectedSavedLocationId == loc.id;
                             return GestureDetector(
                               onLongPress: () => _deleteSavedLocation(loc.id),
                               child: FilterChip(
@@ -279,15 +285,17 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                                       : Icons.home_outlined,
                                   size: 16,
                                 ),
-                                onSelected: (_) => _selectSavedLocation(loc),
+                                onSelected: (_) =>
+                                    _selectSavedLocation(loc),
                               ),
                             );
                           },
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text('Long-press a chip to delete it',
-                          style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      Text(l10n.longPressToDelete,
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.grey[500])),
                       const SizedBox(height: 10),
                     ],
                   );
@@ -296,29 +304,31 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              const Text('Confirm your street address',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              Text(l10n.confirmStreetAddress,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
                 controller: _addressCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
-                  prefixIcon: Icon(Icons.edit_location_alt_outlined),
+                decoration: InputDecoration(
+                  hintText: l10n.addressHint,
+                  prefixIcon: const Icon(Icons.edit_location_alt_outlined),
                   isDense: true,
                 ),
                 maxLines: 2,
-                onChanged: (_) => setState(() => _selectedSavedLocationId = null),
+                onChanged: (_) =>
+                    setState(() => _selectedSavedLocationId = null),
               ),
 
-              // Save location option
               if (_selectedSavedLocationId == null) ...[
                 const SizedBox(height: 6),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _saveLocation,
-                  onChanged: (v) => setState(() => _saveLocation = v ?? false),
-                  title: const Text('Save this location',
-                      style: TextStyle(fontSize: 14)),
+                  onChanged: (v) =>
+                      setState(() => _saveLocation = v ?? false),
+                  title: Text(l10n.saveThisLocation,
+                      style: const TextStyle(fontSize: 14)),
                   controlAffinity: ListTileControlAffinity.leading,
                   dense: true,
                 ),
@@ -327,17 +337,19 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                     padding: const EdgeInsets.only(left: 4, bottom: 4),
                     child: TextField(
                       controller: _labelCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Label (e.g. Home, Work)',
+                      decoration: InputDecoration(
+                        hintText: l10n.locationLabel,
                         isDense: true,
-                        prefixIcon: Icon(Icons.label_outline, size: 18),
+                        prefixIcon:
+                            const Icon(Icons.label_outline, size: 18),
                       ),
                     ),
                   ),
               ],
 
               const SizedBox(height: 12),
-              PrimaryButton(label: 'Confirm Location', onPressed: _confirm),
+              PrimaryButton(
+                  label: l10n.confirmLocation, onPressed: _confirm),
             ],
           ),
         ),

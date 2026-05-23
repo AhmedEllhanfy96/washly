@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/models/worker.dart';
 import '../../core/providers/bookings_provider.dart';
@@ -21,19 +22,23 @@ class BookingDetailScreen extends ConsumerWidget {
     final bookings = ref.watch(allBookingsProvider);
     final workers = ref.watch(workersProvider);
     final fmt = DateFormat('EEEE, MMMM d, yyyy • h:mm a');
+    final l10n = context.l10n;
 
     return bookings.when(
       data: (list) {
-        final booking = list.where((b) => b.id == bookingId).firstOrNull;
+        final booking =
+            list.where((b) => b.id == bookingId).firstOrNull;
         if (booking == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Booking')),
-            body: const Center(child: Text('Booking not found')),
+            appBar: AppBar(title: Text(l10n.bookingNotFound)),
+            body: Center(child: Text(l10n.bookingNotFound)),
           );
         }
 
-        final lat = (booking.location['latitude'] as num?)?.toDouble() ?? 0;
-        final lng = (booking.location['longitude'] as num?)?.toDouble() ?? 0;
+        final lat =
+            (booking.location['latitude'] as num?)?.toDouble() ?? 0;
+        final lng =
+            (booking.location['longitude'] as num?)?.toDouble() ?? 0;
         final hasCoords = lat != 0 && lng != 0;
 
         return Scaffold(
@@ -48,7 +53,7 @@ class BookingDetailScreen extends ConsumerWidget {
           ),
           body: ListView(
             children: [
-              // ── Map ───────────────────────────────────────────────────
+              // Map
               SizedBox(
                 height: 220,
                 child: hasCoords
@@ -86,7 +91,6 @@ class BookingDetailScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          // Address overlay at bottom of map
                           Positioned(
                             bottom: 0,
                             left: 0,
@@ -135,73 +139,67 @@ class BookingDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // ── Customer ────────────────────────────────────────
                     _Section(
-                      title: 'Customer',
+                      title: l10n.customer,
                       icon: Icons.person,
                       children: [
-                        _Row('Name', booking.customerName),
+                        _Row(l10n.name, booking.customerName),
                         if (booking.customerPhone.isNotEmpty)
-                          _Row('Phone', booking.customerPhone),
+                          _Row(l10n.phone, booking.customerPhone),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Car ─────────────────────────────────────────────
                     _Section(
-                      title: 'Car',
+                      title: l10n.car,
                       icon: Icons.directions_car,
                       children: [
-                        _Row('Vehicle', booking.carSummary),
-                        _Row('Plate',
+                        _Row(l10n.vehicle, booking.carSummary),
+                        _Row(l10n.plate,
                             booking.car['plateNumber'] as String? ?? ''),
-                        if ((booking.car['color'] as String?)?.isNotEmpty ==
+                        if ((booking.car['color'] as String?)
+                                ?.isNotEmpty ==
                             true)
-                          _Row('Color',
+                          _Row(l10n.color,
                               booking.car['color'] as String? ?? ''),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Service ─────────────────────────────────────────
                     _Section(
-                      title: 'Service',
+                      title: l10n.service,
                       icon: Icons.cleaning_services,
                       children: [
-                        _Row(
-                          'Type',
-                          booking.serviceType == ServiceType.fullService
-                              ? 'Full Interior + Exterior — 250 EGP'
-                              : 'Exterior Only — 195 EGP',
-                        ),
+                        _Row(l10n.type,
+                            l10n.serviceTypeDetail(booking.serviceType)),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Schedule ────────────────────────────────────────
                     _Section(
-                      title: 'Schedule',
+                      title: l10n.scheduleLabel,
                       icon: Icons.calendar_today,
                       children: [
-                        _Row('Date & Time', fmt.format(booking.scheduledAt)),
-                        _Row('Slot', booking.timeSlot),
+                        _Row(l10n.dateTime,
+                            fmt.format(booking.scheduledAt)),
+                        _Row(l10n.slot, booking.timeSlot),
                         if (booking.assignedTo != null)
-                          _Row('Assigned to', booking.assignedTo!),
+                          _Row(l10n.assignedTo, booking.assignedTo!),
                       ],
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Copy message ─────────────────────────────────────
-                    _CopyMessageButton(booking: booking, lat: lat, lng: lng),
+                    _CopyMessageButton(
+                        booking: booking, lat: lat, lng: lng),
                     const SizedBox(height: 20),
 
-                    // ── Actions ─────────────────────────────────────────
                     if (booking.status == BookingStatus.pending) ...[
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('Actions',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text(l10n.actions,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
                       ),
                       const SizedBox(height: 12),
                       workers.when(
@@ -210,8 +208,10 @@ class BookingDetailScreen extends ConsumerWidget {
                           workers: list,
                           ref: ref,
                         ),
-                        loading: () => const CircularProgressIndicator(),
-                        error: (_, __) => const Text('Could not load workers'),
+                        loading: () =>
+                            const CircularProgressIndicator(),
+                        error: (_, __) =>
+                            Text(l10n.couldNotLoadWorkers),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -223,8 +223,8 @@ class BookingDetailScreen extends ConsumerWidget {
                           if (context.mounted) context.pop();
                         },
                         icon: const Icon(Icons.cancel, color: Colors.red),
-                        label: const Text('Reject Booking',
-                            style: TextStyle(color: Colors.red)),
+                        label: Text(l10n.rejectBooking,
+                            style: const TextStyle(color: Colors.red)),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 52),
                           side: const BorderSide(color: Colors.red),
@@ -241,7 +241,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   booking.id, BookingStatus.inProgress);
                         },
                         icon: const Icon(Icons.local_car_wash),
-                        label: const Text('Mark as In Progress'),
+                        label: Text(l10n.markInProgress),
                         style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 52)),
                       ),
@@ -256,7 +256,7 @@ class BookingDetailScreen extends ConsumerWidget {
                           if (context.mounted) context.pop();
                         },
                         icon: const Icon(Icons.check_circle),
-                        label: const Text('Mark as Completed'),
+                        label: Text(l10n.markCompleted),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
@@ -280,8 +280,6 @@ class BookingDetailScreen extends ConsumerWidget {
   }
 }
 
-// ── Copy message button ───────────────────────────────────────────────────────
-
 class _CopyMessageButton extends StatelessWidget {
   final AdminBooking booking;
   final double lat;
@@ -293,16 +291,12 @@ class _CopyMessageButton extends StatelessWidget {
     required this.lng,
   });
 
-  String _buildMessage() {
+  String _buildMessage(AppLocalizations l10n) {
     final fmt = DateFormat('EEEE, MMMM d, yyyy');
     final hasCoords = lat != 0 && lng != 0;
-    final mapLink = hasCoords
-        ? 'https://maps.google.com/?q=$lat,$lng'
-        : null;
-
-    final service = booking.serviceType == ServiceType.fullService
-        ? 'Full Interior + Exterior — 250 EGP'
-        : 'Exterior Only — 195 EGP';
+    final mapLink =
+        hasCoords ? 'https://maps.google.com/?q=$lat,$lng' : null;
+    final service = l10n.serviceTypeDetail(booking.serviceType);
 
     final buffer = StringBuffer();
     buffer.writeln('🚗 Washly — New Booking');
@@ -332,24 +326,27 @@ class _CopyMessageButton extends StatelessWidget {
       buffer.writeln('👷 Assigned to: ${booking.assignedTo}');
     }
     buffer.writeln();
-    buffer.writeln('Booking ID: #${booking.id.substring(0, 6).toUpperCase()}');
+    buffer.writeln(
+        'Booking ID: #${booking.id.substring(0, 6).toUpperCase()}');
     return buffer.toString().trim();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return OutlinedButton.icon(
       onPressed: () async {
-        final msg = _buildMessage();
+        final msg = _buildMessage(l10n);
         await Clipboard.setData(ClipboardData(text: msg));
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
+              content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Text('Message copied — paste it in WhatsApp or SMS'),
+                  const Icon(Icons.check_circle,
+                      color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(l10n.messageCopied),
                 ],
               ),
               backgroundColor: Colors.green[700],
@@ -359,16 +356,15 @@ class _CopyMessageButton extends StatelessWidget {
         }
       },
       icon: const Icon(Icons.copy),
-      label: const Text('Copy Message for Team'),
+      label: Text(l10n.copyMessageForTeam),
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 }
-
-// ── Assign section ────────────────────────────────────────────────────────────
 
 class _AssignSection extends StatefulWidget {
   final AdminBooking booking;
@@ -398,8 +394,8 @@ class _AssignSectionState extends State<_AssignSection> {
     setState(() => _loading = false);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Booking confirmed & assigned to worker!'),
+        SnackBar(
+            content: Text(context.l10n.bookingConfirmedAssigned),
             backgroundColor: Colors.green),
       );
     }
@@ -407,6 +403,7 @@ class _AssignSectionState extends State<_AssignSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (widget.workers.isEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -419,11 +416,12 @@ class _AssignSectionState extends State<_AssignSection> {
               border: Border.all(color: Colors.orange[200]!),
             ),
             child: Row(children: [
-              Icon(Icons.warning_amber, color: Colors.orange[700], size: 18),
+              Icon(Icons.warning_amber,
+                  color: Colors.orange[700], size: 18),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text('No workers yet. Go to Workers tab to create accounts.',
-                    style: TextStyle(fontSize: 13)),
+              Expanded(
+                child: Text(l10n.noWorkersYet,
+                    style: const TextStyle(fontSize: 13)),
               ),
             ]),
           ),
@@ -435,11 +433,12 @@ class _AssignSectionState extends State<_AssignSection> {
                     setState(() => _loading = true);
                     await widget.ref
                         .read(adminBookingServiceProvider)
-                        .updateStatus(widget.booking.id, BookingStatus.confirmed);
+                        .updateStatus(
+                            widget.booking.id, BookingStatus.confirmed);
                     setState(() => _loading = false);
                   },
             icon: const Icon(Icons.check),
-            label: const Text('Approve Without Assigning'),
+            label: Text(l10n.approveWithoutAssigning),
             style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 52)),
           ),
@@ -450,10 +449,10 @@ class _AssignSectionState extends State<_AssignSection> {
     return Column(
       children: [
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            labelText: 'Assign to Worker',
-            prefixIcon: Icon(Icons.engineering),
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.assignToWorker,
+            prefixIcon: const Icon(Icons.engineering),
+            border: const OutlineInputBorder(),
           ),
           value: _selected,
           items: widget.workers
@@ -466,7 +465,8 @@ class _AssignSectionState extends State<_AssignSection> {
                       if (w.phone.isNotEmpty) ...[
                         const SizedBox(width: 6),
                         Text('· ${w.phone}',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                            style: TextStyle(
+                                color: Colors.grey[500], fontSize: 12)),
                       ],
                     ]),
                   ))
@@ -478,10 +478,11 @@ class _AssignSectionState extends State<_AssignSection> {
           onPressed: (_selected != null && !_loading) ? _assign : null,
           icon: _loading
               ? const SizedBox(
-                  height: 16, width: 16,
+                  height: 16,
+                  width: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.send),
-          label: const Text('Confirm & Assign to Worker'),
+          label: Text(l10n.confirmAndAssign),
           style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 52)),
         ),
@@ -489,8 +490,6 @@ class _AssignSectionState extends State<_AssignSection> {
     );
   }
 }
-
-// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _Section extends StatelessWidget {
   final String title;
@@ -542,14 +541,13 @@ class _Row extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 90,
+            width: 100,
             child: Text(label,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13)),
           ),
           Expanded(
               child: Text(value,
-                  style:
-                      const TextStyle(fontWeight: FontWeight.w500))),
+                  style: const TextStyle(fontWeight: FontWeight.w500))),
         ],
       ),
     );

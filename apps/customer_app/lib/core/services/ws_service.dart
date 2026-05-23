@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'api_client.dart';
@@ -10,7 +9,6 @@ import 'api_client.dart';
 final wsServiceProvider = Provider<WsService>((ref) => WsService());
 
 class WsService {
-  final _storage = const FlutterSecureStorage();
   WebSocketChannel? _channel;
   String? _connectedUrl;
   final _controller = StreamController<Map<String, dynamic>>.broadcast();
@@ -20,7 +18,7 @@ class WsService {
 
   Future<void> connect() async {
     if (_disposed) return;
-    final token = await _storage.read(key: 'auth_token');
+    final token = await readPref('auth_token');
     final wsBase = await getWsUrl();
     _connectedUrl = wsBase;
     final uri = Uri.parse('$wsBase${token != null ? '?token=$token' : ''}');

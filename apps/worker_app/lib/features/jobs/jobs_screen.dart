@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/job.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/job_service.dart';
@@ -18,6 +19,7 @@ class JobsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final jobs = ref.watch(myJobsProvider);
     final profile = ref.watch(workerAuthStateProvider).valueOrNull;
+    final l10n = context.l10n;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -25,7 +27,7 @@ class JobsScreen extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('My Jobs'),
+            Text(l10n.myJobs),
             if (profile != null)
               Text(profile.name,
                   style: TextStyle(fontSize: 12, color: theme.colorScheme.onPrimary.withOpacity(0.8))),
@@ -41,15 +43,16 @@ class JobsScreen extends ConsumerWidget {
       body: jobs.when(
         data: (list) {
           if (list.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_outline, size: 72, color: Colors.green),
-                  SizedBox(height: 16),
-                  Text('No pending jobs', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                  SizedBox(height: 8),
-                  Text('Check back soon', style: TextStyle(color: Colors.grey)),
+                  const Icon(Icons.check_circle_outline, size: 72, color: Colors.green),
+                  const SizedBox(height: 16),
+                  Text(l10n.noPendingJobs,
+                      style: const TextStyle(fontSize: 18, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  Text(l10n.checkBackSoon, style: const TextStyle(color: Colors.grey)),
                 ],
               ),
             );
@@ -64,11 +67,11 @@ class JobsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(12),
               children: [
                 if (today.isNotEmpty) ...[
-                  _SectionHeader(label: "Today — ${today.length} job${today.length > 1 ? 's' : ''}"),
+                  _SectionHeader(label: l10n.todayCount(today.length)),
                   ...today.map((j) => _JobCard(job: j)),
                 ],
                 if (upcoming.isNotEmpty) ...[
-                  _SectionHeader(label: 'Upcoming'),
+                  _SectionHeader(label: l10n.upcoming),
                   ...upcoming.map((j) => _JobCard(job: j)),
                 ],
               ],
@@ -105,6 +108,7 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final fmt = DateFormat('EEE, MMM d • h:mm a');
     final statusColor = switch (job.status) {
       JobStatus.confirmed => Colors.blue,
@@ -137,7 +141,7 @@ class _JobCard extends StatelessWidget {
                       color: statusColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(job.status.label,
+                    child: Text(l10n.jobStatusLabel(job.status.name),
                         style: TextStyle(
                             color: statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
                   ),

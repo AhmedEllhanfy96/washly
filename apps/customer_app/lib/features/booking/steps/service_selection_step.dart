@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -12,63 +13,98 @@ class ServiceSelectionStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(bookingFlowProvider).serviceType;
+    final l10n = context.l10n;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Choose Your Service',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('Select what type of wash you need.',
-              style: TextStyle(color: Colors.grey[600])),
-          const SizedBox(height: 32),
-          _ServiceCard(
-            title: 'Exterior Only',
-            description:
-                'Full exterior wash, rinse, and dry. Perfect for a quick refresh.',
-            price: '195 EGP',
-            icon: Icons.car_crash_outlined,
-            features: const [
-              'Exterior wash & rinse',
-              'Wheel cleaning',
-              'Towel dry',
-              'Window cleaning',
-            ],
-            color: Colors.blue,
-            isSelected: selected == ServiceType.exteriorOnly,
-            onTap: () => ref
-                .read(bookingFlowProvider.notifier)
-                .setServiceType(ServiceType.exteriorOnly),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.chooseYourService,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(l10n.selectWashType,
+                    style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 32),
+                _ServiceCard(
+                  title: l10n.exteriorOnly,
+                  description: l10n.exteriorOnlyDesc,
+                  price: '195 EGP',
+                  icon: Icons.car_crash_outlined,
+                  features: [
+                    l10n.featExteriorWash,
+                    l10n.featWheelCleaning,
+                    l10n.featTowelDry,
+                    l10n.featWindowCleaning,
+                  ],
+                  color: Colors.blue,
+                  isSelected: selected == ServiceType.exteriorOnly,
+                  onTap: () => ref
+                      .read(bookingFlowProvider.notifier)
+                      .setServiceType(ServiceType.exteriorOnly),
+                ),
+                const SizedBox(height: 16),
+                _ServiceCard(
+                  title: l10n.interiorOnly,
+                  description: l10n.interiorOnlyDesc,
+                  price: '220 EGP',
+                  icon: Icons.airline_seat_recline_extra_outlined,
+                  features: [
+                    l10n.featVacuum,
+                    l10n.featDashboardWipe,
+                    l10n.featWindowInterior,
+                    l10n.featAirFreshener,
+                  ],
+                  color: Colors.teal,
+                  isSelected: selected == ServiceType.interiorOnly,
+                  onTap: () => ref
+                      .read(bookingFlowProvider.notifier)
+                      .setServiceType(ServiceType.interiorOnly),
+                ),
+                const SizedBox(height: 16),
+                _ServiceCard(
+                  title: l10n.fullService,
+                  description: l10n.fullServiceDesc,
+                  price: '250 EGP',
+                  icon: Icons.cleaning_services,
+                  features: [
+                    l10n.featEverythingExterior,
+                    l10n.featVacuum,
+                    l10n.featDashboardWipe,
+                    l10n.featWindowInterior,
+                    l10n.featAirFreshener,
+                  ],
+                  color: Colors.purple,
+                  isSelected: selected == ServiceType.fullService,
+                  onTap: () => ref
+                      .read(bookingFlowProvider.notifier)
+                      .setServiceType(ServiceType.fullService),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _ServiceCard(
-            title: 'Full Interior + Exterior',
-            description:
-                'Complete detailing inside and out. The full premium experience.',
-            price: '250 EGP',
-            icon: Icons.cleaning_services,
-            features: const [
-              'Everything in Exterior',
-              'Interior vacuum',
-              'Dashboard & surfaces wipe',
-              'Window interior cleaning',
-              'Air freshener',
+        ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
             ],
-            color: Colors.purple,
-            isSelected: selected == ServiceType.fullService,
-            onTap: () => ref
-                .read(bookingFlowProvider.notifier)
-                .setServiceType(ServiceType.fullService),
           ),
-          const Spacer(),
-          PrimaryButton(
-            label: 'Continue',
+          child: PrimaryButton(
+            label: l10n.continueBtn,
             onPressed: selected != null ? onNext : null,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

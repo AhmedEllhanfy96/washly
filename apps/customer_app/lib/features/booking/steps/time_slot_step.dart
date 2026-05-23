@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../shared/widgets/primary_button.dart';
 
@@ -30,21 +31,21 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
     final slots = ref.watch(availableSlotsProvider(_selectedDate));
     final dateFmt = DateFormat('EEE\nMMM d');
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Column(
       children: [
-        // ── Scrollable content ────────────────────────────────────────
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Pick a Date & Time',
-                    style:
-                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(l10n.pickDateTime,
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
-                Text('Each slot is a 2-hour service window.',
+                Text(l10n.slotWindowHint,
                     style: TextStyle(color: Colors.grey[600])),
                 const SizedBox(height: 24),
 
@@ -95,12 +96,11 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                 ),
 
                 const SizedBox(height: 24),
-                const Text('Available Time Windows',
-                    style: TextStyle(
+                Text(l10n.availableTimeWindows,
+                    style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 15)),
                 const SizedBox(height: 12),
 
-                // Slot cards
                 slots.when(
                   data: (timeSlots) {
                     final bookable =
@@ -114,8 +114,9 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                               Icon(Icons.event_busy,
                                   size: 48, color: Colors.grey[400]),
                               const SizedBox(height: 8),
-                              const Text('No available slots for this day.',
-                                  style: TextStyle(color: Colors.grey)),
+                              Text(l10n.noSlotsForDay,
+                                  style:
+                                      const TextStyle(color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -184,7 +185,7 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '$spotsLeft spot${spotsLeft == 1 ? '' : 's'} left',
+                                        l10n.spotsLeft(spotsLeft),
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: spotsLeft <= 1
@@ -210,15 +211,15 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                     padding: EdgeInsets.all(32),
                     child: CircularProgressIndicator(),
                   )),
-                  error: (_, __) => const Text(
-                      'Failed to load slots. Please try again.'),
+                  error: (_, __) => Text(
+                      'Failed to load slots. Please try again.',
+                      style: TextStyle(color: Colors.grey[600])),
                 ),
               ],
             ),
           ),
         ),
 
-        // ── Fixed bottom button ───────────────────────────────────────
         Container(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           decoration: BoxDecoration(
@@ -232,7 +233,7 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
             ],
           ),
           child: PrimaryButton(
-            label: 'Continue',
+            label: l10n.continueBtn,
             onPressed: _selectedSlot != null ? _submit : null,
           ),
         ),

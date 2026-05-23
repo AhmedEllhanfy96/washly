@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/car.dart';
 import '../../../core/models/saved_car.dart';
 import '../../../core/providers/booking_provider.dart';
@@ -107,6 +108,7 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
   @override
   Widget build(BuildContext context) {
     final savedCarsAsync = ref.watch(savedCarsProvider);
+    final l10n = context.l10n;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -115,13 +117,13 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tell us about your car',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(l10n.tellUsAboutCar,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('We need these details to give your car the right treatment.',
+            Text(l10n.carDetailsSubtitle,
                 style: TextStyle(color: Colors.grey[600])),
 
-            // ── Saved cars ─────────────────────────────────────────────────
+            // Saved cars
             savedCarsAsync.when(
               data: (cars) {
                 if (cars.isEmpty) return const SizedBox(height: 24);
@@ -129,8 +131,8 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 24),
-                    const Text('Your saved cars',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(l10n.yourSavedCars,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     const SizedBox(height: 10),
                     SizedBox(
                       height: 72,
@@ -210,8 +212,9 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
                 Expanded(
                   child: TextFormField(
                     controller: _makeCtrl,
-                    decoration: const InputDecoration(labelText: 'Make (Brand)'),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    decoration: InputDecoration(labelText: l10n.make),
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? l10n.required : null,
                     textCapitalization: TextCapitalization.words,
                     onChanged: (_) => setState(() => _selectedSavedCarId = null),
                   ),
@@ -220,8 +223,9 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
                 Expanded(
                   child: TextFormField(
                     controller: _modelCtrl,
-                    decoration: const InputDecoration(labelText: 'Model'),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    decoration: InputDecoration(labelText: l10n.model),
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? l10n.required : null,
                     textCapitalization: TextCapitalization.words,
                     onChanged: (_) => setState(() => _selectedSavedCarId = null),
                   ),
@@ -234,7 +238,7 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
                 Expanded(
                   child: TextFormField(
                     controller: _yearCtrl,
-                    decoration: const InputDecoration(labelText: 'Year (optional)'),
+                    decoration: InputDecoration(labelText: l10n.yearOptional),
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setState(() => _selectedSavedCarId = null),
                   ),
@@ -243,8 +247,9 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
                 Expanded(
                   child: TextFormField(
                     controller: _plateCtrl,
-                    decoration: const InputDecoration(labelText: 'Plate Number'),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                    decoration: InputDecoration(labelText: l10n.plateNumber),
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? l10n.required : null,
                     textCapitalization: TextCapitalization.none,
                     textAlign: TextAlign.right,
                     onChanged: (_) => setState(() => _selectedSavedCarId = null),
@@ -253,7 +258,8 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
               ],
             ),
             const SizedBox(height: 16),
-            const Text('Car Color', style: TextStyle(fontWeight: FontWeight.w500)),
+            Text(l10n.carColor,
+                style: const TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -275,30 +281,29 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
                 padding: const EdgeInsets.only(top: 8),
                 child: TextFormField(
                   controller: _colorCtrl,
-                  decoration: const InputDecoration(labelText: 'Other color'),
+                  decoration: InputDecoration(labelText: l10n.otherColor),
                   validator: (v) =>
                       (_selectedColor == null && (v == null || v.isEmpty))
-                          ? 'Select or enter a color'
+                          ? l10n.selectOrEnterColor
                           : null,
                 ),
               ),
 
-            // ── Save option (only for new cars) ───────────────────────────
             if (_selectedSavedCarId == null) ...[
               const SizedBox(height: 12),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: _saveCar,
                 onChanged: (v) => setState(() => _saveCar = v ?? false),
-                title: const Text('Save this car for next time',
-                    style: TextStyle(fontSize: 14)),
+                title: Text(l10n.saveCarForNextTime,
+                    style: const TextStyle(fontSize: 14)),
                 controlAffinity: ListTileControlAffinity.leading,
                 dense: true,
               ),
             ],
 
             const SizedBox(height: 32),
-            PrimaryButton(label: 'Continue', onPressed: _submit),
+            PrimaryButton(label: l10n.continueBtn, onPressed: _submit),
           ],
         ),
       ),

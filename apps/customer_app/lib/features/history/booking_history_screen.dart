@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/providers/booking_provider.dart';
 import '../../core/services/booking_service.dart';
@@ -12,17 +13,18 @@ class BookingHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookings = ref.watch(userBookingsProvider);
+    final l10n = context.l10n;
 
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('My Bookings'),
-          bottom: const TabBar(
+          title: Text(l10n.myBookings),
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Cancelled'),
+              Tab(text: l10n.tabActive),
+              Tab(text: l10n.tabCompleted),
+              Tab(text: l10n.tabCancelled),
             ],
           ),
         ),
@@ -37,27 +39,26 @@ class BookingHistoryScreen extends ConsumerWidget {
                           BookingStatus.inProgress,
                         ].contains(b.status))
                     .toList(),
-                emptyMessage: 'No active bookings',
+                emptyMessage: l10n.noActiveBookings,
                 ref: ref,
               ),
               _BookingList(
                 bookings: list
                     .where((b) => b.status == BookingStatus.completed)
                     .toList(),
-                emptyMessage: 'No completed bookings yet',
+                emptyMessage: l10n.noCompletedBookings,
                 ref: ref,
               ),
               _BookingList(
                 bookings: list
                     .where((b) => b.status == BookingStatus.cancelled)
                     .toList(),
-                emptyMessage: 'No cancelled bookings',
+                emptyMessage: l10n.noCancelledBookings,
                 ref: ref,
               ),
             ],
           ),
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
       ),
@@ -77,20 +78,21 @@ class _BookingList extends StatelessWidget {
   });
 
   Future<void> _cancel(BuildContext context, Booking booking) async {
+    final l10n = context.l10n;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cancel Booking?'),
-        content: const Text('Are you sure you want to cancel this booking?'),
+        title: Text(l10n.cancelBookingTitle),
+        content: Text(l10n.cancelBookingConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
+            child: Text(l10n.no),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Yes, cancel', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.yesCancel,
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

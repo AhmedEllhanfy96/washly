@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/booking_provider.dart';
 import '../../shared/widgets/booking_status_card.dart';
-import '../../shared/widgets/primary_button.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -15,11 +15,12 @@ class HomeScreen extends ConsumerWidget {
     final profile = ref.watch(authProvider);
     final bookings = ref.watch(userBookingsProvider);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Washly'),
+        title: Text(l10n.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -50,28 +51,27 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   profile.when(
                     data: (p) => Text(
-                      'Hello, ${p?.name.split(' ').first ?? 'there'} 👋',
+                      l10n.helloName(p?.name.split(' ').first ?? ''),
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.bold),
                     ),
-                    loading: () =>
-                        const Text('Hello!',
-                            style: TextStyle(color: Colors.white, fontSize: 22)),
+                    loading: () => Text(l10n.helloThere,
+                        style: const TextStyle(color: Colors.white, fontSize: 22)),
                     error: (_, __) => const SizedBox(),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Book a car wash at your doorstep',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  Text(
+                    l10n.bookCarWashDoorstep,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () => context.go('/home/book'),
                     icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text('Book a Wash',
-                        style: TextStyle(color: Colors.white)),
+                    label: Text(l10n.bookAWash,
+                        style: const TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white.withOpacity(0.2),
                       side: const BorderSide(color: Colors.white54),
@@ -91,8 +91,8 @@ class HomeScreen extends ConsumerWidget {
                   Expanded(
                     child: _ServiceCard(
                       icon: Icons.car_crash_outlined,
-                      title: 'Exterior\nOnly',
-                      subtitle: 'Quick & clean',
+                      title: l10n.exteriorOnlyShort,
+                      subtitle: l10n.quickAndClean,
                       color: Colors.blue,
                       onTap: () => context.go('/home/book'),
                     ),
@@ -100,9 +100,19 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _ServiceCard(
+                      icon: Icons.airline_seat_recline_extra_outlined,
+                      title: l10n.interiorOnlyShort,
+                      subtitle: l10n.deepClean,
+                      color: Colors.teal,
+                      onTap: () => context.go('/home/book'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ServiceCard(
                       icon: Icons.cleaning_services,
-                      title: 'Full\nService',
-                      subtitle: 'Inside + Outside',
+                      title: l10n.fullServiceShort,
+                      subtitle: l10n.insideOutside,
                       color: Colors.purple,
                       onTap: () => context.go('/home/book'),
                     ),
@@ -112,27 +122,27 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // Recent bookings
-          const SliverToBoxAdapter(
+          // Recent bookings header
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: Text('Recent Bookings',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+              child: Text(l10n.recentBookings,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
           ),
 
           bookings.when(
             data: (list) {
               if (list.isEmpty) {
-                return const SliverToBoxAdapter(
+                return SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
                     child: Column(
                       children: [
-                        Icon(Icons.car_rental, size: 64, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text('No bookings yet',
-                            style: TextStyle(color: Colors.grey)),
+                        const Icon(Icons.car_rental, size: 64, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        Text(l10n.noBookingsYet,
+                            style: const TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -160,7 +170,7 @@ class HomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: TextButton(
                   onPressed: () => context.go('/history'),
-                  child: const Text('View all bookings'),
+                  child: Text(l10n.viewAllBookings),
                 ),
               ),
             ),
@@ -194,25 +204,25 @@ class _ServiceCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 28),
+                child: Icon(icon, color: color, size: 22),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(title,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 15)),
-              const SizedBox(height: 4),
+                      fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 2),
               Text(subtitle,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 11)),
             ],
           ),
         ),

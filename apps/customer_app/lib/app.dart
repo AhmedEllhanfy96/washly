@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_colors.dart';
+import 'core/l10n/app_localizations.dart';
 import 'shared/router/app_router.dart';
 
 class WashlyApp extends ConsumerWidget {
@@ -15,10 +16,18 @@ class WashlyApp extends ConsumerWidget {
       title: 'Washly',
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      localeResolutionCallback: (locale, supported) {
+        if (locale == null) return const Locale('en');
+        for (final s in supported) {
+          if (s.languageCode == locale.languageCode) return s;
+        }
+        return const Locale('en');
+      },
       supportedLocales: const [
         Locale('en'),
         Locale('ar'),

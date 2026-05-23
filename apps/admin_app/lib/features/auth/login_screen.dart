@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/server_config_button.dart';
 
@@ -32,10 +33,12 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
             _emailCtrl.text.trim(),
             _passCtrl.text,
           );
-    } on Exception catch (e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red[700]),
+          SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red[700]),
         );
       }
     } finally {
@@ -46,6 +49,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -65,30 +69,38 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.admin_panel_settings, size: 40, color: theme.colorScheme.primary),
+                      Icon(Icons.admin_panel_settings,
+                          size: 40, color: theme.colorScheme.primary),
                       const SizedBox(width: 12),
-                      const Text('Washly Admin',
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                      Text(l10n.appTitle,
+                          style: const TextStyle(
+                              fontSize: 26, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text('Sign in to manage bookings', style: TextStyle(color: Colors.grey[600])),
+                  Text(l10n.signInToManage,
+                      style: TextStyle(color: Colors.grey[600])),
                   const SizedBox(height: 40),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                        labelText: 'Admin Email', prefixIcon: Icon(Icons.email_outlined)),
+                    decoration: InputDecoration(
+                        labelText: l10n.adminEmail,
+                        prefixIcon: const Icon(Icons.email_outlined)),
                     validator: (v) =>
-                        (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                        (v == null || !v.contains('@'))
+                            ? l10n.invalidEmail
+                            : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Password', prefixIcon: Icon(Icons.lock_outlined)),
-                    validator: (v) => (v == null || v.length < 6) ? 'Too short' : null,
+                    decoration: InputDecoration(
+                        labelText: l10n.password,
+                        prefixIcon: const Icon(Icons.lock_outlined)),
+                    validator: (v) =>
+                        (v == null || v.length < 6) ? l10n.tooShort : null,
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 32),
@@ -99,9 +111,11 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                       onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(
-                              height: 20, width: 20,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Sign In', style: TextStyle(fontSize: 16)),
+                          : Text(l10n.signIn,
+                              style: const TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],

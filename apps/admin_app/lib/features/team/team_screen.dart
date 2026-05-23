@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/worker.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../core/services/booking_service.dart';
@@ -12,13 +13,14 @@ class TeamScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workers = ref.watch(workersProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Workers')),
+      appBar: AppBar(title: Text(l10n.workers)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddWorkerDialog(context, ref),
         icon: const Icon(Icons.person_add),
-        label: const Text('Add Worker'),
+        label: Text(l10n.addWorker),
       ),
       body: workers.when(
         data: (list) {
@@ -29,16 +31,17 @@ class TeamScreen extends ConsumerWidget {
                 children: [
                   const Icon(Icons.engineering_outlined, size: 64, color: Colors.grey),
                   const SizedBox(height: 12),
-                  const Text('No workers yet', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  Text(l10n.noWorkersEmpty,
+                      style: const TextStyle(color: Colors.grey, fontSize: 16)),
                   const SizedBox(height: 8),
-                  const Text('Add workers so you can assign bookings to them',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                  Text(l10n.addWorkersHint,
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
                       textAlign: TextAlign.center),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => _showAddWorkerDialog(context, ref),
                     icon: const Icon(Icons.person_add),
-                    label: const Text('Add First Worker'),
+                    label: Text(l10n.addFirstWorker),
                   ),
                 ],
               ),
@@ -71,115 +74,122 @@ class TeamScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.engineering, size: 22),
-            SizedBox(width: 8),
-            Text('Add Worker Account'),
-          ]),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Full Name', prefixIcon: Icon(Icons.person_outlined)),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                        labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined)),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                        labelText: 'Email (login)', prefixIcon: Icon(Icons.email_outlined)),
-                    validator: (v) =>
-                        (v == null || !v.contains('@')) ? 'Enter valid email' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: passCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Password', prefixIcon: Icon(Icons.lock_outlined)),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'Min 6 characters' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
+        builder: (ctx, setDialogState) {
+          final l10n = ctx.l10n;
+          return AlertDialog(
+            title: Row(children: [
+              const Icon(Icons.engineering, size: 22),
+              const SizedBox(width: 8),
+              Text(l10n.addWorkerAccount),
+            ]),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameCtrl,
+                      decoration: InputDecoration(
+                          labelText: l10n.fullName,
+                          prefixIcon: const Icon(Icons.person_outlined)),
+                      validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
                     ),
-                    child: Row(children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Worker will use email + password to login to the Worker app.',
-                          style: TextStyle(fontSize: 12),
-                        ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                          labelText: l10n.phone,
+                          prefixIcon: const Icon(Icons.phone_outlined)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                          labelText: l10n.emailLogin,
+                          prefixIcon: const Icon(Icons.email_outlined)),
+                      validator: (v) =>
+                          (v == null || !v.contains('@')) ? l10n.enterValidEmail : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: passCtrl,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                          labelText: l10n.password,
+                          prefixIcon: const Icon(Icons.lock_outlined)),
+                      validator: (v) =>
+                          (v == null || v.length < 6) ? l10n.min6Chars : null,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ]),
-                  ),
-                ],
+                      child: Row(children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.workerLoginHint,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: loading ? null : () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: loading
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setDialogState(() => loading = true);
-                      try {
-                        await ref.read(adminBookingServiceProvider).createWorker(
-                              name: nameCtrl.text.trim(),
-                              email: emailCtrl.text.trim(),
-                              password: passCtrl.text,
-                              phone: phoneCtrl.text.trim(),
-                            );
-                        ref.invalidate(workersProvider);
-                        if (ctx.mounted) Navigator.pop(ctx);
-                      } on DioException catch (e) {
-                        setDialogState(() => loading = false);
-                        if (ctx.mounted) {
-                          final msg = (e.response?.data as Map?)?['error'] as String?;
-                          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                              content: Text(msg ?? 'Failed to create worker'),
-                              backgroundColor: Colors.red));
+            actions: [
+              TextButton(
+                  onPressed: loading ? null : () => Navigator.pop(ctx),
+                  child: Text(l10n.cancel)),
+              ElevatedButton(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setDialogState(() => loading = true);
+                        try {
+                          await ref.read(adminBookingServiceProvider).createWorker(
+                                name: nameCtrl.text.trim(),
+                                email: emailCtrl.text.trim(),
+                                password: passCtrl.text,
+                                phone: phoneCtrl.text.trim(),
+                              );
+                          ref.invalidate(workersProvider);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        } on DioException catch (e) {
+                          setDialogState(() => loading = false);
+                          if (ctx.mounted) {
+                            final msg = (e.response?.data as Map?)?['error'] as String?;
+                            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                content: Text(msg ?? ctx.l10n.failedCreateWorker),
+                                backgroundColor: Colors.red));
+                          }
+                        } on Exception catch (_) {
+                          setDialogState(() => loading = false);
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                content: Text(ctx.l10n.failedCreateWorkerRetry),
+                                backgroundColor: Colors.red));
+                          }
                         }
-                      } on Exception catch (_) {
-                        setDialogState(() => loading = false);
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                              content: Text('Failed to create worker. Try again.'),
-                              backgroundColor: Colors.red));
-                        }
-                      }
-                    },
-              child: loading
-                  ? const SizedBox(
-                      height: 18, width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Create Account'),
-            ),
-          ],
-        ),
+                      },
+                child: loading
+                    ? const SizedBox(
+                        height: 18, width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(l10n.createAccountBtn),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -222,16 +232,20 @@ class _WorkerCard extends StatelessWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete Worker'),
-        content: Text('Remove ${worker.name}? They will no longer be able to login.'),
+        title: Text(l10n.deleteWorker),
+        content: Text(l10n.removeWorkerConfirm(worker.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel)),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red))),
+              child: Text(l10n.delete,
+                  style: const TextStyle(color: Colors.red))),
         ],
       ),
     );

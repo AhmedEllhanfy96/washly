@@ -65,8 +65,11 @@ class Job {
     return '$color $make $model'.trim();
   }
 
-  String get serviceName =>
-      serviceType == 'fullService' ? 'Full Interior + Exterior — 250 EGP' : 'Exterior Only — 195 EGP';
+  String get serviceName => switch (serviceType) {
+    'fullService' => 'Full Interior + Exterior — 250 EGP',
+    'interiorOnly' => 'Interior Only — 220 EGP',
+    _ => 'Exterior Only — 195 EGP',
+  };
 
   bool get isToday {
     final now = DateTime.now();
