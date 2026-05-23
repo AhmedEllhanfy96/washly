@@ -49,6 +49,12 @@ build_apk() {
   sudo rm -rf "${APP_DIR}/.dart_tool" "${APP_DIR}/build" "${APP_DIR}/android/.gradle"
   rm -f "${APP_DIR}/pubspec.lock"
 
+  # Wipe stale Gradle wrapper lock/dist from the volume before building
+  sudo docker run --rm \
+    -v "washly-gradle-${NAME}:/root/.gradle" \
+    alpine \
+    sh -c "rm -rf /root/.gradle/wrapper/dists 2>/dev/null || true"
+
   sudo docker run --rm \
     -v "${APP_DIR}:/app" \
     -v washly-android-sdk:/opt/android-sdk-linux \
@@ -80,5 +86,5 @@ esac
 
 echo ""
 echo "Done! APKs saved to: ${DEST_DIR}"
-echo "NOTE: Server URL is set at runtime — tap the 🖥 icon on the login screen."
-echo "      Default: http://10.0.2.2:3000 (Android emulator → localhost)"
+echo "NOTE: Server URL is set at runtime — tap the server icon on the login screen."
+echo "      Default: http://150.230.53.189:3000 (public VM)"
