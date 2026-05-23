@@ -30,17 +30,24 @@ GITHUB_USER="ahmedellhanfy96"
 REPO="washly"
 REGISTRY="ghcr.io/${GITHUB_USER}/${REPO}"
 
+# Support both docker compose (v2 plugin) and docker-compose (v1)
+if docker compose version &>/dev/null; then
+  COMPOSE="docker compose"
+else
+  COMPOSE="docker-compose"
+fi
+
 echo "=== Pulling latest images ==="
-docker compose -f docker-compose.vm.yml pull
+$COMPOSE -f docker-compose.vm.yml pull
 
 echo ""
 echo "=== Restarting services ==="
-docker compose -f docker-compose.vm.yml down
-docker compose -f docker-compose.vm.yml up -d
+$COMPOSE -f docker-compose.vm.yml down
+$COMPOSE -f docker-compose.vm.yml up -d
 
 echo ""
 echo "=== Running containers ==="
-docker compose -f docker-compose.vm.yml ps
+$COMPOSE -f docker-compose.vm.yml ps
 
 echo ""
 echo "Done!"
