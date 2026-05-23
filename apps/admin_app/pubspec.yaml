@@ -24,7 +24,7 @@ dependencies:
   go_router: ^14.1.4
 
   # UI helpers
-  intl: ^0.19.0
+  intl: ^0.20.2
   shimmer: ^3.0.0
 
   # Map
