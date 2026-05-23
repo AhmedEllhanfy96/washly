@@ -23,6 +23,22 @@ services:
       retries: 10
     restart: unless-stopped
 
+  init-db:
+    image: postgres:16-alpine
+    pull_policy: missing
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-washly_secret}
+    command: >
+      sh -c "
+        apk add --no-cache curl -q &&
+        curl -fsSL https://raw.githubusercontent.com/AhmedEllhanfy96/washly/main/backend/sql/init.sql |
+        psql -h postgres -U washly -d washly
+      "
+    restart: "no"
+
   backend:
     image: ghcr.io/ahmedellhanfy96/washly/backend:latest
     pull_policy: always
@@ -35,6 +51,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   customer-app:
