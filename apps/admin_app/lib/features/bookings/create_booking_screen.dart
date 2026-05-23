@@ -217,7 +217,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     decoration: const InputDecoration(
                         labelText: 'Plate Number', border: OutlineInputBorder()),
                     validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-                    textCapitalization: TextCapitalization.characters,
+                    textCapitalization: TextCapitalization.none,
+                    textAlign: TextAlign.right,
                   ),
                 ),
                 const SizedBox(width: 10),
