@@ -66,6 +66,11 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
   }
 
   Future<void> _goToMyLocation() async {
+    if (kIsWeb) {
+      // Browser geolocation — works on localhost or HTTPS only
+      _showGpsError();
+      return;
+    }
     final l10n = context.l10n;
     setState(() => _locating = true);
     try {
@@ -88,18 +93,17 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
       setState(() => _center = point);
       if (_mapReady) _mapController.move(point, 16);
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(kIsWeb
-                ? context.l10n.locationDenied
-                : context.l10n.couldNotGetGps),
-          ),
-        );
-      }
+      _showGpsError();
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  void _showGpsError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.couldNotGetGps)),
+    );
   }
 
   void _confirm() {
@@ -127,19 +131,10 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.pickFromMap),
-        actions: [
-          TextButton(
-            onPressed: _confirm,
-            child: Text(l10n.confirmLocation,
-                style: TextStyle(color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(l10n.pickFromMap)),
       body: Column(
         children: [
+          // Instruction bar
           Container(
             width: double.infinity,
             color: theme.colorScheme.primaryContainer,
@@ -158,6 +153,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
             ),
           ),
 
+          // Map
           Expanded(
             child: Stack(
               children: [
@@ -181,7 +177,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
                     ),
                   ],
                 ),
-                // Fixed center pin
+                // Fixed centre pin
                 const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -192,21 +188,22 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
                   ),
                 ),
                 // GPS button
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: FloatingActionButton.small(
-                    heroTag: 'admin_gps',
-                    onPressed: _locating ? null : _goToMyLocation,
-                    tooltip: 'My location',
-                    child: _locating
-                        ? const SizedBox(
-                            height: 18, width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.my_location),
+                if (!kIsWeb)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: FloatingActionButton.small(
+                      heroTag: 'admin_gps',
+                      onPressed: _locating ? null : _goToMyLocation,
+                      tooltip: 'My location',
+                      child: _locating
+                          ? const SizedBox(
+                              height: 18, width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.my_location),
+                    ),
                   ),
-                ),
-                // Coordinate display
+                // Coordinate readout
                 Positioned(
                   left: 12,
                   bottom: 12,
@@ -227,7 +224,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
             ),
           ),
 
-          // Address input
+          // Address + confirm panel
           Container(
             color: theme.colorScheme.surface,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -236,8 +233,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(l10n.confirmStreetAddress,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14)),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _addressCtrl,

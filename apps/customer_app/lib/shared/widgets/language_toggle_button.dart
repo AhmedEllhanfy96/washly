@@ -9,14 +9,14 @@ class LanguageToggleButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isAr = ref.watch(localeProvider).languageCode == 'ar';
-    final fgColor = Theme.of(context).appBarTheme.foregroundColor ??
-        Theme.of(context).colorScheme.onPrimary;
+    // Inherit the AppBar's icon colour so the button is always visible.
+    final iconColor = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
     return TextButton(
       onPressed: () => ref.read(localeProvider.notifier).toggle(),
+      style: TextButton.styleFrom(foregroundColor: iconColor),
       child: Text(
         isAr ? 'EN' : 'عربي',
-        style: TextStyle(
-            color: fgColor, fontWeight: FontWeight.bold, fontSize: 14),
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
       ),
     );
   }

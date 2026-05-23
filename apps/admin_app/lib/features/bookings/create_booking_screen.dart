@@ -338,39 +338,29 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
               _SectionHeader(icon: Icons.location_on_outlined, label: l10n.location),
               const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _addressCtrl,
-                      decoration: InputDecoration(
-                        labelText: l10n.address,
-                        prefixIcon: const Icon(Icons.location_on_outlined),
-                        border: const OutlineInputBorder(),
-                        hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
-                        suffixIcon: _pickedLat != 0
-                            ? const Icon(Icons.check_circle, color: Colors.green, size: 18)
-                            : null,
-                      ),
-                      maxLines: 2,
-                      validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 56,
-                    child: OutlinedButton.icon(
-                      onPressed: _openMapPicker,
-                      icon: const Icon(Icons.map_outlined, size: 18),
-                      label: Text(l10n.pickFromMap,
-                          style: const TextStyle(fontSize: 12)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _addressCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.address,
+                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  border: const OutlineInputBorder(),
+                  hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
+                  suffixIcon: _pickedLat != 0
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : null,
+                ),
+                maxLines: 2,
+                validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: _openMapPicker,
+                  icon: const Icon(Icons.map_outlined),
+                  label: Text(l10n.pickFromMap),
+                ),
               ),
               if (_pickedLat != 0)
                 Padding(
