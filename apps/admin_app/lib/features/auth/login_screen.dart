@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
-import '../../shared/widgets/server_config_button.dart';
+import '../../shared/widgets/language_toggle_button.dart';
 
 class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
@@ -54,7 +54,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: const [ServerConfigButton()],
+        actions: const [LanguageToggleButton()],
       ),
       body: Center(
         child: ConstrainedBox(

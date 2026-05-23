@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/app_localizations.dart';
+import 'core/providers/locale_provider.dart';
 import 'shared/router/app_router.dart';
 
 class WashlyWorkerApp extends ConsumerWidget {
@@ -11,9 +12,11 @@ class WashlyWorkerApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.read(workerRouterProvider);
+    final locale = ref.watch(localeProvider);
     return MaterialApp.router(
       title: 'Washly Worker',
       debugShowCheckedModeBanner: false,
+      locale: locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -24,13 +27,6 @@ class WashlyWorkerApp extends ConsumerWidget {
         Locale('en'),
         Locale('ar'),
       ],
-      localeResolutionCallback: (locale, supported) {
-        if (locale == null) return const Locale('en');
-        for (final s in supported) {
-          if (s.languageCode == locale.languageCode) return s;
-        }
-        return const Locale('en');
-      },
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

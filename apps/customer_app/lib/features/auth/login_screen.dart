@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/primary_button.dart';
-import '../../shared/widgets/server_config_button.dart';
+import '../../shared/widgets/language_toggle_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -55,7 +55,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: const [ServerConfigButton()],
+        actions: const [LanguageToggleButton()],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

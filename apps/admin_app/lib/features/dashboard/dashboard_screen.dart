@@ -7,6 +7,7 @@ import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/bookings_provider.dart';
+import '../../shared/widgets/language_toggle_button.dart';
 import '../../shared/widgets/status_badge.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -23,6 +24,7 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.appTitle),
         actions: [
+          const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.group),
             tooltip: l10n.workers,

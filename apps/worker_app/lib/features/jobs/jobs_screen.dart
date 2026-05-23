@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/l10n/app_localizations.dart';
+import '../../shared/widgets/language_toggle_button.dart';
 import '../../core/models/job.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/job_service.dart';
@@ -34,6 +35,7 @@ class JobsScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(workerAuthProvider.notifier).signOut(),
