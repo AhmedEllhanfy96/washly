@@ -15,7 +15,7 @@ services:
       POSTGRES_USER: washly
       POSTGRES_PASSWORD: ${DB_PASSWORD:-washly_secret}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U washly"]
       interval: 5s
@@ -143,5 +143,3 @@ services:
       - "8082:80"
     restart: unless-stopped
 
-volumes:
-  postgres_data:
