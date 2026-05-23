@@ -25,7 +25,7 @@ services:
 
   init-db:
     image: postgres:16-alpine
-    pull_policy: missing
+    pull_policy: if_not_present
     depends_on:
       postgres:
         condition: service_healthy
