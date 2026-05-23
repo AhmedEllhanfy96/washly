@@ -9,12 +9,20 @@ import '../../features/booking/booking_flow_screen.dart';
 import '../../features/history/booking_history_screen.dart';
 import '../../features/home/home_screen.dart';
 
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, __) => notifyListeners());
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final notifier = _AuthChangeNotifier(ref);
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/login',
+    refreshListenable: notifier,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
       if (authState.isLoading) return null;
       final isLoggedIn = authState.valueOrNull != null;
       final isAuthRoute = state.matchedLocation == '/login' ||
