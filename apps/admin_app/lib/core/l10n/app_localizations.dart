@@ -131,6 +131,16 @@ class AppLocalizations {
   String get failedCreateWorkerRetry =>
       _ar ? 'فشل إنشاء الحساب. حاول مجدداً.' : 'Failed to create worker. Try again.';
 
+  // Map location picker
+  String get pickFromMap => _ar ? 'اختر من الخريطة' : 'Pick from Map';
+  String get dragMapPin => _ar ? 'اسحب الخريطة لضبط الدبوس على موقعك' : 'Drag the map to place the pin on your location';
+  String get confirmStreetAddress => _ar ? 'أكّد عنوان الشارع' : 'Confirm Street Address';
+  String get addressHint => _ar ? 'مثال: 15 شارع التحرير، المعادي' : 'e.g. 15 El Tahrir St, Maadi';
+  String get confirmLocation => _ar ? 'تأكيد الموقع' : 'Confirm Location';
+  String get enterStreetAddress => _ar ? 'الرجاء إدخال عنوان الشارع' : 'Please enter a street address';
+  String get couldNotGetGps => _ar ? 'تعذّر تحديد الموقع. اسحب الدبوس يدوياً.' : 'Could not get GPS. Drag the pin manually.';
+  String get locationDenied => _ar ? 'إذن الموقع مرفوض. فعّله من الإعدادات.' : 'Location permission denied. Enable it in Settings.';
+
   // Create booking — source chips
   String get location => _ar ? 'الموقع' : 'Location';
   String get sourcePhone => _ar ? 'مكالمة هاتفية' : 'Phone Call';

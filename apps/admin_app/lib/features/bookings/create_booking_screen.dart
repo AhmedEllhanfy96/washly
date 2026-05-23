@@ -7,6 +7,7 @@ import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../core/services/booking_service.dart';
+import '../../shared/widgets/map_location_picker.dart';
 
 class CreateBookingScreen extends ConsumerStatefulWidget {
   const CreateBookingScreen({super.key});
@@ -32,6 +33,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String _selectedSlot = '08:00';
   bool _loading = false;
+  double _pickedLat = 0;
+  double _pickedLng = 0;
 
   static const _colors = [
     'White', 'Black', 'Silver', 'Gray', 'Red',
@@ -55,6 +58,27 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     _addressCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.push<LocationPickResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapLocationPickerScreen(
+          initialAddress: _addressCtrl.text,
+          initialLat: _pickedLat,
+          initialLng: _pickedLng,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _pickedLat = result.latitude;
+        _pickedLng = result.longitude;
+      });
+      _addressCtrl.text = result.address;
+    }
   }
 
   Future<void> _pickDate() async {
@@ -90,8 +114,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             },
             serviceType: _serviceType,
             address: _addressCtrl.text.trim(),
-            latitude: 0,
-            longitude: 0,
+            latitude: _pickedLat,
+            longitude: _pickedLng,
             scheduledAt: _selectedDate,
             timeSlot: _selectedSlot,
             notes: _notesCtrl.text.trim(),
@@ -314,17 +338,48 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
               _SectionHeader(icon: Icons.location_on_outlined, label: l10n.location),
               const SizedBox(height: 10),
-              TextFormField(
-                controller: _addressCtrl,
-                decoration: InputDecoration(
-                  labelText: l10n.address,
-                  prefixIcon: const Icon(Icons.location_on_outlined),
-                  border: const OutlineInputBorder(),
-                  hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
-                ),
-                maxLines: 2,
-                validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _addressCtrl,
+                      decoration: InputDecoration(
+                        labelText: l10n.address,
+                        prefixIcon: const Icon(Icons.location_on_outlined),
+                        border: const OutlineInputBorder(),
+                        hintText: 'e.g. 15 شارع التحرير، المعادي، القاهرة',
+                        suffixIcon: _pickedLat != 0
+                            ? const Icon(Icons.check_circle, color: Colors.green, size: 18)
+                            : null,
+                      ),
+                      maxLines: 2,
+                      validator: (v) => (v == null || v.isEmpty) ? l10n.required : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 56,
+                    child: OutlinedButton.icon(
+                      onPressed: _openMapPicker,
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: Text(l10n.pickFromMap,
+                          style: const TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (_pickedLat != 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '${_pickedLat.toStringAsFixed(5)}, ${_pickedLng.toStringAsFixed(5)}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                ),
 
               const SizedBox(height: 20),
 
