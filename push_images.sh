@@ -83,10 +83,12 @@ case $TARGET in
     ;;
   all)
     pull_base_images
-    build_and_push backend      "${REPO_DIR}/backend"
-    build_and_push customer-app "${REPO_DIR}/apps/customer_app"
-    build_and_push admin-app    "${REPO_DIR}/apps/admin_app"
-    build_and_push worker-app   "${REPO_DIR}/apps/worker_app"
+    build_and_push backend "${REPO_DIR}/backend"
+    # Build all three Flutter apps in parallel
+    build_and_push customer-app "${REPO_DIR}/apps/customer_app" &
+    build_and_push admin-app    "${REPO_DIR}/apps/admin_app"    &
+    build_and_push worker-app   "${REPO_DIR}/apps/worker_app"   &
+    wait
     ;;
   *) echo "Usage: bash push_images.sh [backend|customer|admin|worker|all]"; exit 1 ;;
 esac
