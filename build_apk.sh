@@ -41,7 +41,7 @@ sudo service docker start 2>/dev/null || true
 build_apk() {
   local NAME=$1
   local APP_DIR="${REPO_DIR}/apps/${NAME}_app"
-  local OUT_APK="${APP_DIR}/build/app/outputs/flutter-apk/app-debug.apk"
+  local OUT_APK="${APP_DIR}/build/app/outputs/flutter-apk/app-release.apk"
   local DEST="${DEST_DIR}/washly_${NAME}.apk"
 
   echo ""
@@ -66,7 +66,7 @@ build_apk() {
     ghcr.io/cirruslabs/flutter:stable \
     sh -c "find /app/android -name '*.lock' -delete 2>/dev/null; \
            rm -f /root/.gradle/caches/journal-1/journal-1.lock; \
-           flutter pub get && flutter build apk --debug"
+           flutter pub get && flutter build apk --release"
 
   sudo cp "$OUT_APK" "$DEST"
   echo "✓ ${NAME} APK → $DEST"
