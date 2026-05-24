@@ -32,6 +32,9 @@ dependencies:
   latlong2: ^0.9.1
   geolocator: ^13.0.2
 
+  # External links
+  url_launcher: ^6.3.0
+
   # Utils
   equatable: ^2.0.5
 
@@ -42,3 +45,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/

@@ -219,7 +219,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                       _Card(title: l10n.customer, icon: Icons.person, rows: [
                         _info(l10n.name, _job.customerName),
                         if (_job.customerPhone.isNotEmpty)
-                          _info(l10n.phone, _job.customerPhone),
+                          _phoneRow(_job.customerPhone, context),
                       ]),
                       const SizedBox(height: 12),
                       _Card(title: l10n.car, icon: Icons.directions_car, rows: [
@@ -311,6 +311,46 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
         JobStatus.cancelled => Colors.red,
         _ => Colors.grey,
       };
+
+  Widget _phoneRow(String phone, BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(l10n.phone,
+                style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(phone,
+                style: const TextStyle(fontWeight: FontWeight.w500)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.phone, color: Colors.green, size: 20),
+            onPressed: () => launchUrl(Uri.parse('tel:$phone'),
+                mode: LaunchMode.externalApplication),
+            tooltip: l10n.callCustomer,
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 20),
+            onPressed: () {
+              final digits = phone.replaceAll(RegExp(r'\D'), '');
+              launchUrl(Uri.parse('https://wa.me/$digits'),
+                  mode: LaunchMode.externalApplication);
+            },
+            tooltip: l10n.whatsappCustomer,
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _info(String label, String value) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),

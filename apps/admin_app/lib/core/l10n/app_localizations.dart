@@ -147,6 +147,15 @@ class AppLocalizations {
   String get sourceWalkIn => _ar ? 'زيارة مباشرة' : 'Walk-in';
   String get sourceOther => _ar ? 'أخرى' : 'Other';
 
+  // Customers
+  String get customers => _ar ? 'العملاء' : 'Customers';
+  String get noCustomers => _ar ? 'لا يوجد عملاء بعد' : 'No customers yet';
+  String get totalBookings => _ar ? 'إجمالي الحجوزات' : 'Total bookings';
+  String get memberSince => _ar ? 'عضو منذ' : 'Member since';
+  String get callCustomer => _ar ? 'اتصال' : 'Call';
+  String get whatsappCustomer => _ar ? 'واتساب' : 'WhatsApp';
+  String get contactCustomer => _ar ? 'التواصل مع العميل' : 'Contact Customer';
+
   // Status & service
   String statusLabel(BookingStatus s) => switch (s) {
         BookingStatus.pending => _ar ? 'قيد الانتظار' : 'Pending',

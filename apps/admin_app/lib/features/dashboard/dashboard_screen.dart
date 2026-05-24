@@ -26,6 +26,11 @@ class DashboardScreen extends ConsumerWidget {
         actions: [
           const LanguageToggleButton(),
           IconButton(
+            icon: const Icon(Icons.people_alt_outlined),
+            tooltip: l10n.customers,
+            onPressed: () => context.go('/dashboard/customers'),
+          ),
+          IconButton(
             icon: const Icon(Icons.group),
             tooltip: l10n.workers,
             onPressed: () => context.go('/dashboard/team'),

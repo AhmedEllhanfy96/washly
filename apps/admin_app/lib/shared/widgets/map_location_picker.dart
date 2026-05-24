@@ -8,6 +8,9 @@ import '../../core/l10n/app_localizations.dart';
 
 const _cairoCenter = LatLng(30.0444, 31.2357);
 
+// Approximate height of the bottom confirm panel (label + field + button + padding)
+const _panelHeight = 196.0;
+
 class LocationPickResult {
   final String address;
   final double latitude;
@@ -34,7 +37,8 @@ class MapLocationPickerScreen extends StatefulWidget {
   });
 
   @override
-  State<MapLocationPickerScreen> createState() => _MapLocationPickerScreenState();
+  State<MapLocationPickerScreen> createState() =>
+      _MapLocationPickerScreenState();
 }
 
 class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
@@ -67,7 +71,6 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
 
   Future<void> _goToMyLocation() async {
     if (kIsWeb) {
-      // Browser geolocation — works on localhost or HTTPS only
       _showGpsError();
       return;
     }
@@ -129,35 +132,41 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
+      // We manage keyboard avoidance manually so the map never overflows.
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: Text(l10n.pickFromMap)),
-      body: Column(
+      body: Stack(
         children: [
-          // Instruction bar
-          Container(
-            width: double.infinity,
-            color: theme.colorScheme.primaryContainer,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Icon(Icons.touch_app, size: 18,
-                    color: theme.colorScheme.onPrimaryContainer),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(l10n.dragMapPin,
-                      style: TextStyle(fontSize: 13,
-                          color: theme.colorScheme.onPrimaryContainer)),
+          // ── Map fills the full body ──────────────────────────────────────
+          Column(
+            children: [
+              // Instruction bar
+              Container(
+                width: double.infinity,
+                color: theme.colorScheme.primaryContainer,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.touch_app,
+                        size: 18,
+                        color: theme.colorScheme.onPrimaryContainer),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(l10n.dragMapPin,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onPrimaryContainer)),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-
-          // Map
-          Expanded(
-            child: Stack(
-              children: [
-                FlutterMap(
+              ),
+              // Map tile
+              Expanded(
+                child: FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
                     initialCenter: _center,
@@ -171,92 +180,121 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.washly.admin',
                       maxZoom: 19,
                     ),
                   ],
                 ),
-                // Fixed centre pin
-                const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.location_pin, color: Colors.red, size: 48),
-                      SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-                // GPS button
-                if (!kIsWeb)
-                  Positioned(
-                    right: 12,
-                    bottom: 12,
-                    child: FloatingActionButton.small(
-                      heroTag: 'admin_gps',
-                      onPressed: _locating ? null : _goToMyLocation,
-                      tooltip: 'My location',
-                      child: _locating
-                          ? const SizedBox(
-                              height: 18, width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.my_location),
-                    ),
-                  ),
-                // Coordinate readout
-                Positioned(
-                  left: 12,
-                  bottom: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_center.latitude.toStringAsFixed(4)}, '
-                      '${_center.longitude.toStringAsFixed(4)}',
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
-                    ),
-                  ),
-                ),
-              ],
+              ),
+              // Reserve space equal to panel height so the pin sits above panel
+              // when keyboard is hidden. Collapses when keyboard is open.
+              SizedBox(height: keyboardHeight > 0 ? 0 : _panelHeight),
+            ],
+          ),
+
+          // ── Fixed centre pin ────────────────────────────────────────────
+          // Centred over the map area above the panel.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            // Don't overlap the panel when keyboard is hidden
+            bottom: keyboardHeight > 0 ? keyboardHeight : _panelHeight,
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.location_pin, color: Colors.red, size: 48),
+                  SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
 
-          // Address + confirm panel
-          Container(
-            color: theme.colorScheme.surface,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.confirmStreetAddress,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _addressCtrl,
-                  decoration: InputDecoration(
-                    hintText: l10n.addressHint,
-                    prefixIcon: const Icon(Icons.edit_location_alt_outlined),
-                    border: const OutlineInputBorder(),
-                    isDense: true,
+          // ── Coordinate readout ──────────────────────────────────────────
+          Positioned(
+            left: 12,
+            bottom:
+                (keyboardHeight > 0 ? keyboardHeight : _panelHeight) + 12,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${_center.latitude.toStringAsFixed(4)}, '
+                '${_center.longitude.toStringAsFixed(4)}',
+                style:
+                    const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+            ),
+          ),
+
+          // ── GPS button ──────────────────────────────────────────────────
+          if (!kIsWeb)
+            Positioned(
+              right: 12,
+              bottom:
+                  (keyboardHeight > 0 ? keyboardHeight : _panelHeight) + 12,
+              child: FloatingActionButton.small(
+                heroTag: 'admin_gps',
+                onPressed: _locating ? null : _goToMyLocation,
+                tooltip: 'My location',
+                child: _locating
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child:
+                            CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.my_location),
+              ),
+            ),
+
+          // ── Bottom confirm panel ─────────────────────────────────────────
+          // Floats above the keyboard; sits at screen bottom when keyboard hidden.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: keyboardHeight,
+            child: Container(
+              color: theme.colorScheme.surface,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(l10n.confirmStreetAddress,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _addressCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.addressHint,
+                      prefixIcon:
+                          const Icon(Icons.edit_location_alt_outlined),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    maxLines: 2,
                   ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: _confirm,
-                    icon: const Icon(Icons.check),
-                    label: Text(l10n.confirmLocation,
-                        style: const TextStyle(fontSize: 15)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _confirm,
+                      icon: const Icon(Icons.check),
+                      label: Text(l10n.confirmLocation,
+                          style: const TextStyle(fontSize: 15)),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

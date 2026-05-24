@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
@@ -145,7 +146,11 @@ class BookingDetailScreen extends ConsumerWidget {
                       children: [
                         _Row(l10n.name, booking.customerName),
                         if (booking.customerPhone.isNotEmpty)
-                          _Row(l10n.phone, booking.customerPhone),
+                          _PhoneRow(
+                            label: l10n.phone,
+                            phone: booking.customerPhone,
+                            l10n: l10n,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -487,6 +492,58 @@ class _AssignSectionState extends State<_AssignSection> {
               minimumSize: const Size(double.infinity, 52)),
         ),
       ],
+    );
+  }
+}
+
+class _PhoneRow extends StatelessWidget {
+  final String label;
+  final String phone;
+  final AppLocalizations l10n;
+  const _PhoneRow(
+      {required this.label, required this.phone, required this.l10n});
+
+  Future<void> _call() =>
+      launchUrl(Uri.parse('tel:$phone'), mode: LaunchMode.externalApplication);
+
+  Future<void> _whatsapp() {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    return launchUrl(Uri.parse('https://wa.me/$digits'),
+        mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label,
+                style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(phone,
+                style: const TextStyle(fontWeight: FontWeight.w500)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.phone, color: Colors.green, size: 20),
+            onPressed: _call,
+            tooltip: l10n.callCustomer,
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 20),
+            onPressed: _whatsapp,
+            tooltip: l10n.whatsappCustomer,
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+        ],
+      ),
     );
   }
 }

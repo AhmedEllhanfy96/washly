@@ -3,6 +3,27 @@ import { pool } from '../db.js';
 export default async function (app) {
   const auth = { preHandler: [app.authenticate] };
 
+  // GET customers with booking count — admin customer list
+  app.get('/customers', auth, async () => {
+    const { rows } = await pool.query(`
+      SELECT u.id, u.name, u.email, u.phone, u.created_at,
+             COUNT(b.id)::int AS booking_count
+        FROM users u
+        LEFT JOIN bookings b ON b.user_id = u.id
+       WHERE u.role = 'customer'
+       GROUP BY u.id
+       ORDER BY u.created_at DESC
+    `);
+    return rows.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      phone: c.phone ?? '',
+      bookingCount: c.booking_count,
+      createdAt: c.created_at,
+    }));
+  });
+
   // GET workers (users with role='worker') — used by admin assign dropdown
   app.get('/workers', auth, async () => {
     const { rows } = await pool.query(

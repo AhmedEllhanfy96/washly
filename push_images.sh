@@ -29,6 +29,20 @@ REGISTRY="ghcr.io/${GITHUB_USER}/${REPO}"
 
 TARGET=${1:-all}
 
+# Pre-pull base images once with retries to avoid Docker Hub timeouts mid-build
+pull_base_images() {
+  local IMAGES=("nginx:alpine")
+  for IMG in "${IMAGES[@]}"; do
+    echo "Pulling ${IMG}..."
+    for i in 1 2 3; do
+      docker pull "$IMG" && break || {
+        echo "Attempt $i failed, retrying in 10s..."
+        sleep 10
+      }
+    done
+  done
+}
+
 build_and_push() {
   local NAME=$1
   local CONTEXT=$2
@@ -41,6 +55,7 @@ build_and_push() {
     docker build -t "$IMAGE" "$CONTEXT"
   else
     docker build \
+      --pull=false \
       --build-arg API_URL="$API_URL" \
       --build-arg WS_URL="$WS_URL" \
       -t "$IMAGE" "$CONTEXT"
@@ -51,11 +66,23 @@ build_and_push() {
 }
 
 case $TARGET in
-  backend)  build_and_push backend  "${REPO_DIR}/backend" ;;
-  customer) build_and_push customer-app "${REPO_DIR}/apps/customer_app" ;;
-  admin)    build_and_push admin-app    "${REPO_DIR}/apps/admin_app" ;;
-  worker)   build_and_push worker-app  "${REPO_DIR}/apps/worker_app" ;;
+  backend)
+    build_and_push backend "${REPO_DIR}/backend"
+    ;;
+  customer)
+    pull_base_images
+    build_and_push customer-app "${REPO_DIR}/apps/customer_app"
+    ;;
+  admin)
+    pull_base_images
+    build_and_push admin-app "${REPO_DIR}/apps/admin_app"
+    ;;
+  worker)
+    pull_base_images
+    build_and_push worker-app "${REPO_DIR}/apps/worker_app"
+    ;;
   all)
+    pull_base_images
     build_and_push backend      "${REPO_DIR}/backend"
     build_and_push customer-app "${REPO_DIR}/apps/customer_app"
     build_and_push admin-app    "${REPO_DIR}/apps/admin_app"

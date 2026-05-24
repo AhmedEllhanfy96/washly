@@ -71,20 +71,24 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   }
 
   Future<void> _goToMyLocation() async {
-    final l10n = context.l10n;
     setState(() => _locating = true);
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.locationDenied)),
-          );
+      // On web, skip the explicit permission check — it can return deniedForever
+      // on browsers that don't support the Permissions API (Safari, Firefox).
+      // Let getCurrentPosition() trigger the browser's native prompt directly.
+      if (!kIsWeb) {
+        var permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
         }
-        return;
+        if (permission == LocationPermission.deniedForever) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.l10n.locationDenied)),
+            );
+          }
+          return;
+        }
       }
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,

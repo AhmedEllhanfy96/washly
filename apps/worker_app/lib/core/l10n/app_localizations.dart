@@ -54,6 +54,8 @@ class AppLocalizations {
   String get addressCopied => _ar ? 'تم نسخ العنوان' : 'Address copied';
   String get couldNotOpenMaps =>
       _ar ? 'تعذر فتح خرائط جوجل' : 'Could not open Google Maps';
+  String get callCustomer => _ar ? 'اتصال' : 'Call';
+  String get whatsappCustomer => _ar ? 'واتساب' : 'WhatsApp';
   String statusUpdated(String status) =>
       _ar ? 'تم تحديث الحالة إلى $status' : 'Status updated to $status';
 
