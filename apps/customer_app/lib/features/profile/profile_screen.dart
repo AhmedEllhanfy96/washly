@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
@@ -116,7 +117,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.editProfile)),
+      appBar: AppBar(
+        title: Text(l10n.editProfile),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

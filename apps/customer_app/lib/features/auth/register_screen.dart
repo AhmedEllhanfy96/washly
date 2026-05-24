@@ -38,7 +38,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             _emailCtrl.text.trim(),
             _passCtrl.text,
             _nameCtrl.text.trim(),
-            _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+            _phoneCtrl.text.trim(),
           );
     } on Exception catch (e) {
       if (mounted) {
@@ -87,8 +87,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                      labelText: l10n.phoneOptional,
+                      labelText: l10n.phoneNumber,
                       prefixIcon: const Icon(Icons.phone_outlined)),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? l10n.required : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
