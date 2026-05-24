@@ -8,6 +8,7 @@ import '../../features/auth/register_screen.dart';
 import '../../features/booking/booking_flow_screen.dart';
 import '../../features/history/booking_history_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/profile/profile_screen.dart';
 
 class _AuthChangeNotifier extends ChangeNotifier {
   _AuthChangeNotifier(Ref ref) {
@@ -42,6 +43,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/history', builder: (_, __) => const BookingHistoryScreen()),
+      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
     ],
     errorBuilder: (_, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),

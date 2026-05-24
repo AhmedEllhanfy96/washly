@@ -71,6 +71,17 @@ CREATE TRIGGER bookings_updated_at
   BEFORE UPDATE ON bookings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+CREATE TABLE IF NOT EXISTS schedule_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_date DATE UNIQUE NOT NULL,
+  window_duration INT NOT NULL DEFAULT 2,
+  capacity_per_window INT NOT NULL DEFAULT 3,
+  day_start TIME NOT NULL DEFAULT '08:00',
+  day_end TIME NOT NULL DEFAULT '18:00',
+  is_closed BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Default admin (password: admin123) — change in production
 INSERT INTO users (email, password_hash, name, role)
 VALUES ('admin@washly.com', crypt('admin123', gen_salt('bf')), 'Admin', 'admin')

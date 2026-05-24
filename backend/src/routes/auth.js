@@ -43,4 +43,38 @@ export default async function (app) {
     );
     return rows[0] ?? null;
   });
+
+  app.patch('/profile', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { name, phone, currentPassword, newPassword } = req.body;
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    if (name !== undefined && name.trim()) {
+      updates.push(`name = $${idx++}`);
+      values.push(name.trim());
+    }
+    if (phone !== undefined) {
+      updates.push(`phone = $${idx++}`);
+      values.push(phone.trim());
+    }
+    if (newPassword) {
+      if (!currentPassword) {
+        return reply.status(400).send({ error: 'currentPassword required to change password' });
+      }
+      const { rows: ur } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.uid]);
+      const valid = await bcrypt.compare(currentPassword, ur[0].password_hash);
+      if (!valid) return reply.status(400).send({ error: 'Current password is incorrect' });
+      updates.push(`password_hash = $${idx++}`);
+      values.push(await bcrypt.hash(newPassword, 10));
+    }
+    if (!updates.length) return reply.status(400).send({ error: 'Nothing to update' });
+
+    values.push(req.user.uid);
+    const { rows } = await pool.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx} RETURNING id, email, name, phone, role`,
+      values
+    );
+    return rows[0];
+  });
 }

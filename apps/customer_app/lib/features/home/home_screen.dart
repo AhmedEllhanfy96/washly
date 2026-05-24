@@ -25,6 +25,11 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           const LanguageToggleButton(),
           IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: l10n.profile,
+            onPressed: () => context.go('/profile'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authProvider.notifier).signOut(),
           ),

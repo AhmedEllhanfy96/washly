@@ -131,6 +131,34 @@ class AppLocalizations {
   String get failedCreateWorkerRetry =>
       _ar ? 'فشل إنشاء الحساب. حاول مجدداً.' : 'Failed to create worker. Try again.';
 
+  // Schedule management
+  String get scheduleManagement => _ar ? 'إدارة الجداول' : 'Schedule Management';
+  String get scheduleUpdated => _ar ? 'تم حفظ جدول اليوم بنجاح' : 'Schedule saved successfully';
+  String get scheduleReset => _ar ? 'تمت إعادة الضبط إلى الإعدادات الافتراضية' : 'Reset to default settings';
+  String get resetToDefault => _ar ? 'إعادة الضبط للافتراضي' : 'Reset to Default';
+  String get resetToDefaultConfirm => _ar ? 'هل تريد حذف إعدادات هذا اليوم والعودة للافتراضية؟' : 'Delete overrides for this day and restore defaults?';
+  String get reset => _ar ? 'إعادة ضبط' : 'Reset';
+  String get save => _ar ? 'حفظ' : 'Save';
+  String get dayClosed => _ar ? 'اليوم مغلق' : 'Day Closed';
+  String get dayOpen => _ar ? 'اليوم مفتوح' : 'Day Open';
+  String get dayClosedSubtitle => _ar ? 'لن يتمكن العملاء من حجز هذا اليوم' : 'Customers cannot book this day';
+  String get dayOpenSubtitle => _ar ? 'متاح للحجز' : 'Available for bookings';
+  String get workersAvailable => _ar ? 'العمال المتاحون' : 'Workers Available';
+  String get workersAvailableSubtitle => _ar ? 'عدد الحجوزات في كل نافذة زمنية' : 'Max bookings per time window';
+  String get workersLabel => _ar ? 'عامل' : 'Workers';
+  String get windowDuration => _ar ? 'مدة النافذة' : 'Window Duration';
+  String get windowDurationSubtitle => _ar ? 'مدة كل موعد بالساعات' : 'Duration of each booking slot';
+  String get oneHour => _ar ? 'ساعة' : '1 Hour';
+  String get twoHours => _ar ? 'ساعتان' : '2 Hours';
+  String get operatingHours => _ar ? 'ساعات العمل' : 'Operating Hours';
+  String get startTime => _ar ? 'بداية الدوام' : 'Start Time';
+  String get endTime => _ar ? 'نهاية الدوام' : 'End Time';
+  String get slotPreview => _ar ? 'معاينة المواعيد' : 'Slot Preview';
+  String get slotsLabel => _ar ? 'موعد' : 'slots';
+  String get noSlotsGenerated => _ar ? 'لا توجد مواعيد بهذه الإعدادات' : 'No slots with these settings';
+  String get saveSchedule => _ar ? 'حفظ الجدول' : 'Save Schedule';
+  String get noChanges => _ar ? 'لا توجد تغييرات' : 'No Changes';
+
   // Map location picker
   String get pickFromMap => _ar ? 'اختر من الخريطة' : 'Pick from Map';
   String get dragMapPin => _ar ? 'اسحب الخريطة لضبط الدبوس على موقعك' : 'Drag the map to place the pin on your location';

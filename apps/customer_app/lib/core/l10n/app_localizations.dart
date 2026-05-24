@@ -38,6 +38,17 @@ class AppLocalizations {
   String get alreadyHaveAccount =>
       _ar ? 'لديك حساب بالفعل؟ سجّل الدخول' : 'Already have an account? Sign in';
   String get required => _ar ? 'مطلوب' : 'Required';
+  String get profile => _ar ? 'الملف الشخصي' : 'Profile';
+  String get editProfile => _ar ? 'تعديل الملف الشخصي' : 'Edit Profile';
+  String get personalInfo => _ar ? 'المعلومات الشخصية' : 'Personal Information';
+  String get phoneNumber => _ar ? 'رقم الهاتف' : 'Phone Number';
+  String get changePassword => _ar ? 'تغيير كلمة المرور' : 'Change Password';
+  String get currentPassword => _ar ? 'كلمة المرور الحالية' : 'Current Password';
+  String get newPassword => _ar ? 'كلمة المرور الجديدة' : 'New Password';
+  String get confirmNewPassword => _ar ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password';
+  String get passwordsDoNotMatch => _ar ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match';
+  String get profileUpdated => _ar ? 'تم تحديث الملف الشخصي بنجاح' : 'Profile updated successfully';
+  String get saveChanges => _ar ? 'حفظ التغييرات' : 'Save Changes';
 
   // Home
   String helloName(String name) => _ar ? 'مرحباً، $name 👋' : 'Hello, $name 👋';

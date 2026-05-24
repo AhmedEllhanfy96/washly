@@ -31,6 +31,11 @@ class DashboardScreen extends ConsumerWidget {
             onPressed: () => context.go('/dashboard/customers'),
           ),
           IconButton(
+            icon: const Icon(Icons.calendar_month_outlined),
+            tooltip: l10n.scheduleManagement,
+            onPressed: () => context.go('/dashboard/schedule'),
+          ),
+          IconButton(
             icon: const Icon(Icons.group),
             tooltip: l10n.workers,
             onPressed: () => context.go('/dashboard/team'),

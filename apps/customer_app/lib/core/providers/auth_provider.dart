@@ -42,6 +42,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
     }
   }
 
+  Future<void> updateProfile({String? name, String? phone, String? currentPassword, String? newPassword}) async {
+    final updated = await _svc.updateProfile(name: name, phone: phone, currentPassword: currentPassword, newPassword: newPassword);
+    state = AsyncValue.data(updated);
+  }
+
   Future<void> signOut() async {
     _ws.disconnect();
     await _svc.signOut();

@@ -9,6 +9,7 @@ import '../../features/bookings/booking_list_screen.dart';
 import '../../features/bookings/create_booking_screen.dart';
 import '../../features/customers/customers_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/schedule/schedule_screen.dart';
 import '../../features/team/team_screen.dart';
 
 class _RouterNotifier extends ChangeNotifier {
@@ -56,9 +57,8 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(path: 'team', builder: (_, __) => const TeamScreen()),
-          GoRoute(
-              path: 'customers',
-              builder: (_, __) => const CustomersScreen()),
+          GoRoute(path: 'customers', builder: (_, __) => const CustomersScreen()),
+          GoRoute(path: 'schedule', builder: (_, __) => const ScheduleScreen()),
         ],
       ),
     ],

@@ -63,4 +63,25 @@ class AuthService {
     await deletePref('auth_token');
     _currentUser = null;
   }
+
+  Future<UserProfile> updateProfile({
+    String? name,
+    String? phone,
+    String? currentPassword,
+    String? newPassword,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (phone != null) data['phone'] = phone;
+      if (currentPassword != null) data['currentPassword'] = currentPassword;
+      if (newPassword != null) data['newPassword'] = newPassword;
+      final res = await _dio.patch('/auth/profile', data: data);
+      _currentUser = UserProfile.fromJson(res.data as Map<String, dynamic>);
+      return _currentUser!;
+    } on DioException catch (e) {
+      final msg = (e.response?.data as Map?)?['error'] as String? ?? 'Update failed';
+      throw Exception(msg);
+    }
+  }
 }
