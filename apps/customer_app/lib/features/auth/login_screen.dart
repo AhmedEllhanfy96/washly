@@ -79,11 +79,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       const SizedBox(height: 16),
                       Container(
-                        width: 100,
-                        height: 100,
+                        width: 200,
+                        height: 90,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.25),
@@ -92,12 +92,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.contain,
-                          ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(height: 20),

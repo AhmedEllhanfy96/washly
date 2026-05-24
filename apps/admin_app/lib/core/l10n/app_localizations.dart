@@ -140,6 +140,7 @@ class AppLocalizations {
   String get enterStreetAddress => _ar ? 'الرجاء إدخال عنوان الشارع' : 'Please enter a street address';
   String get couldNotGetGps => _ar ? 'تعذّر تحديد الموقع. اسحب الدبوس يدوياً.' : 'Could not get GPS. Drag the pin manually.';
   String get locationDenied => _ar ? 'إذن الموقع مرفوض. فعّله من الإعدادات.' : 'Location permission denied. Enable it in Settings.';
+  String get searchLocation => _ar ? 'ابحث عن موقع...' : 'Search for a location...';
 
   // Create booking — source chips
   String get location => _ar ? 'الموقع' : 'Location';

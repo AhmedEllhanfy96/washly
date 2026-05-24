@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -15,6 +18,14 @@ import '../../../shared/widgets/primary_button.dart';
 
 const _cairoCenter = LatLng(30.0444, 31.2357);
 
+class _SearchResult {
+  final String displayName;
+  final double lat;
+  final double lon;
+  const _SearchResult(
+      {required this.displayName, required this.lat, required this.lon});
+}
+
 class LocationStep extends ConsumerStatefulWidget {
   final VoidCallback onNext;
   const LocationStep({super.key, required this.onNext});
@@ -27,12 +38,20 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   final _mapController = MapController();
   final _addressCtrl = TextEditingController();
   final _labelCtrl = TextEditingController(text: 'Home');
+  final _searchCtrl = TextEditingController();
 
   LatLng _center = _cairoCenter;
   bool _locating = false;
   bool _mapReady = false;
   bool _saveLocation = false;
   String? _selectedSavedLocationId;
+  bool _showNewAddressForm = false;
+
+  // Search state
+  List<_SearchResult> _searchResults = [];
+  bool _searchLoading = false;
+  bool _showSearchResults = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -46,9 +65,11 @@ class _LocationStepState extends ConsumerState<LocationStep> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _mapController.dispose();
     _addressCtrl.dispose();
     _labelCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -57,8 +78,11 @@ class _LocationStepState extends ConsumerState<LocationStep> {
       _selectedSavedLocationId = loc.id;
       _center = LatLng(loc.latitude, loc.longitude);
       _saveLocation = false;
+      _showNewAddressForm = false;
+      _showSearchResults = false;
     });
     _addressCtrl.text = loc.address;
+    _searchCtrl.clear();
     if (_mapReady) _mapController.move(_center, 15);
   }
 
@@ -73,9 +97,6 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   Future<void> _goToMyLocation() async {
     setState(() => _locating = true);
     try {
-      // On web, skip the explicit permission check — it can return deniedForever
-      // on browsers that don't support the Permissions API (Safari, Firefox).
-      // Let getCurrentPosition() trigger the browser's native prompt directly.
       if (!kIsWeb) {
         var permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied) {
@@ -97,21 +118,90 @@ class _LocationStepState extends ConsumerState<LocationStep> {
       setState(() {
         _center = point;
         _selectedSavedLocationId = null;
+        _showNewAddressForm = true;
       });
       _mapController.move(point, 16);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              kIsWeb ? context.l10n.locationDeniedBrowser : context.l10n.couldNotGetGps,
-            ),
+            content: Text(kIsWeb
+                ? context.l10n.locationDeniedBrowser
+                : context.l10n.couldNotGetGps),
           ),
         );
       }
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    if (query.trim().length < 3) {
+      setState(() {
+        _searchResults = [];
+        _showSearchResults = false;
+      });
+      return;
+    }
+    setState(() => _searchLoading = true);
+    _debounce = Timer(const Duration(milliseconds: 600), () async {
+      final results = await _nominatimSearch(query.trim());
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _searchLoading = false;
+          _showSearchResults = results.isNotEmpty;
+        });
+      }
+    });
+  }
+
+  Future<List<_SearchResult>> _nominatimSearch(String query) async {
+    try {
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 6),
+        receiveTimeout: const Duration(seconds: 6),
+      ));
+      final res = await dio.get<List<dynamic>>(
+        'https://nominatim.openstreetmap.org/search',
+        queryParameters: {
+          'q': query,
+          'format': 'json',
+          'limit': '5',
+          'countrycodes': 'eg',
+          'accept-language': 'ar,en',
+        },
+        options: Options(
+          headers: {'User-Agent': 'WashlyApp/1.0'},
+        ),
+      );
+      return (res.data ?? []).map((e) {
+        final parts = (e['display_name'] as String).split(', ');
+        final short = parts.take(3).join(', ');
+        return _SearchResult(
+          displayName: short,
+          lat: double.parse(e['lat'] as String),
+          lon: double.parse(e['lon'] as String),
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  void _selectSearchResult(_SearchResult result) {
+    final point = LatLng(result.lat, result.lon);
+    setState(() {
+      _center = point;
+      _selectedSavedLocationId = null;
+      _showSearchResults = false;
+      _showNewAddressForm = true;
+    });
+    _searchCtrl.text = result.displayName;
+    _addressCtrl.text = result.displayName;
+    if (_mapReady) _mapController.move(point, 16);
   }
 
   Future<void> _confirm() async {
@@ -132,7 +222,8 @@ class _LocationStepState extends ConsumerState<LocationStep> {
         );
 
     if (_saveLocation && _selectedSavedLocationId == null) {
-      final label = _labelCtrl.text.trim().isEmpty ? 'Home' : _labelCtrl.text.trim();
+      final label =
+          _labelCtrl.text.trim().isEmpty ? 'Home' : _labelCtrl.text.trim();
       try {
         await ref.read(profileServiceProvider).saveLocation(
               label: label,
@@ -155,29 +246,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
 
     return Column(
       children: [
-        // Instruction bar
-        Container(
-          width: double.infinity,
-          color: theme.colorScheme.primaryContainer,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Icon(Icons.touch_app,
-                  size: 18, color: theme.colorScheme.onPrimaryContainer),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.dragMapPin,
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: theme.colorScheme.onPrimaryContainer),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Map
+        // ── Map ────────────────────────────────────────────────────────────
         Expanded(
           child: Stack(
             children: [
@@ -198,12 +267,15 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.washly.customer',
                     maxZoom: 19,
                   ),
                 ],
               ),
+
+              // Centre pin
               const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -213,6 +285,113 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                   ],
                 ),
               ),
+
+              // ── Search bar ─────────────────────────────────────────────
+              Positioned(
+                top: 10,
+                left: 10,
+                right: 10,
+                child: Column(
+                  children: [
+                    Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(12),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        onChanged: _onSearchChanged,
+                        onTap: () => setState(() => _showSearchResults =
+                            _searchResults.isNotEmpty),
+                        decoration: InputDecoration(
+                          hintText: l10n.searchLocation,
+                          prefixIcon: _searchLoading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                )
+                              : const Icon(Icons.search),
+                          suffixIcon: _searchCtrl.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() {
+                                      _searchResults = [];
+                                      _showSearchResults = false;
+                                    });
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: Colors.white,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Search results dropdown
+                    if (_showSearchResults && _searchResults.isNotEmpty)
+                      Material(
+                        elevation: 6,
+                        borderRadius: BorderRadius.circular(12),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: _searchResults.length,
+                            separatorBuilder: (_, __) => const Divider(
+                                height: 1, indent: 16, endIndent: 16),
+                            itemBuilder: (_, i) {
+                              final r = _searchResults[i];
+                              return ListTile(
+                                dense: true,
+                                leading: Icon(Icons.location_on,
+                                    color:
+                                        theme.colorScheme.primary, size: 20),
+                                title: Text(r.displayName,
+                                    style: const TextStyle(fontSize: 13)),
+                                onTap: () => _selectSearchResult(r),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Coords badge
+              Positioned(
+                left: 12,
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_center.latitude.toStringAsFixed(4)}, '
+                    '${_center.longitude.toStringAsFixed(4)}',
+                    style:
+                        const TextStyle(color: Colors.white, fontSize: 11),
+                  ),
+                ),
+              ),
+
+              // GPS button
               Positioned(
                 right: 12,
                 bottom: 12,
@@ -228,28 +407,11 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                       : const Icon(Icons.my_location),
                 ),
               ),
-              Positioned(
-                left: 12,
-                bottom: 12,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${_center.latitude.toStringAsFixed(4)}, '
-                    '${_center.longitude.toStringAsFixed(4)}',
-                    style: const TextStyle(color: Colors.white, fontSize: 11),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
 
-        // Bottom panel
+        // ── Bottom panel ──────────────────────────────────────────────────
         Container(
           color: theme.colorScheme.surface,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -257,6 +419,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Saved locations chips
               savedLocsAsync.when(
                 data: (locs) {
                   if (locs.isEmpty) return const SizedBox.shrink();
@@ -279,7 +442,8 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                             final selected =
                                 _selectedSavedLocationId == loc.id;
                             return GestureDetector(
-                              onLongPress: () => _deleteSavedLocation(loc.id),
+                              onLongPress: () =>
+                                  _deleteSavedLocation(loc.id),
                               child: FilterChip(
                                 label: Text(loc.label),
                                 selected: selected,
@@ -308,50 +472,94 @@ class _LocationStepState extends ConsumerState<LocationStep> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
 
-              Text(l10n.confirmStreetAddress,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 14)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _addressCtrl,
-                decoration: InputDecoration(
-                  hintText: l10n.addressHint,
-                  prefixIcon: const Icon(Icons.edit_location_alt_outlined),
-                  isDense: true,
+              // When saved location is selected and not entering new address
+              if (_selectedSavedLocationId != null && !_showNewAddressForm)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _addressCtrl.text,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w500, fontSize: 13),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedSavedLocationId = null;
+                          _showNewAddressForm = true;
+                        });
+                        _addressCtrl.clear();
+                      },
+                      icon: const Icon(Icons.edit_location_alt, size: 16),
+                      label: Text(l10n.useDifferentAddress,
+                          style: const TextStyle(fontSize: 13)),
+                      style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                )
+              else ...[
+                // Address text field (new address entry or no saved locations)
+                Text(l10n.confirmStreetAddress,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _addressCtrl,
+                  decoration: InputDecoration(
+                    hintText: l10n.addressHint,
+                    prefixIcon:
+                        const Icon(Icons.edit_location_alt_outlined),
+                    isDense: true,
+                  ),
+                  maxLines: 2,
+                  onChanged: (_) => setState(
+                      () => _selectedSavedLocationId = null),
                 ),
-                maxLines: 2,
-                onChanged: (_) =>
-                    setState(() => _selectedSavedLocationId = null),
-              ),
-
-              if (_selectedSavedLocationId == null) ...[
-                const SizedBox(height: 6),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _saveLocation,
-                  onChanged: (v) =>
-                      setState(() => _saveLocation = v ?? false),
-                  title: Text(l10n.saveThisLocation,
-                      style: const TextStyle(fontSize: 14)),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  dense: true,
-                ),
-                if (_saveLocation)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 4),
-                    child: TextField(
-                      controller: _labelCtrl,
-                      decoration: InputDecoration(
-                        hintText: l10n.locationLabel,
-                        isDense: true,
-                        prefixIcon:
-                            const Icon(Icons.label_outline, size: 18),
+                if (_selectedSavedLocationId == null) ...[
+                  const SizedBox(height: 6),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _saveLocation,
+                    onChanged: (v) =>
+                        setState(() => _saveLocation = v ?? false),
+                    title: Text(l10n.saveThisLocation,
+                        style: const TextStyle(fontSize: 14)),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    dense: true,
+                  ),
+                  if (_saveLocation)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 4),
+                      child: TextField(
+                        controller: _labelCtrl,
+                        decoration: InputDecoration(
+                          hintText: l10n.locationLabel,
+                          isDense: true,
+                          prefixIcon:
+                              const Icon(Icons.label_outline, size: 18),
+                        ),
                       ),
                     ),
-                  ),
+                ],
+                const SizedBox(height: 12),
               ],
 
-              const SizedBox(height: 12),
               PrimaryButton(
                   label: l10n.confirmLocation, onPressed: _confirm),
             ],

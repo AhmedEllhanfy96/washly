@@ -180,6 +180,12 @@ class AppLocalizations {
       _ar ? 'هل أنت متأكد من إلغاء هذا الحجز؟' : 'Are you sure you want to cancel this booking?';
   String get no => _ar ? 'لا' : 'No';
   String get yesCancel => _ar ? 'نعم، إلغاء' : 'Yes, cancel';
+  String get cancel => _ar ? 'إلغاء' : 'Cancel';
+  String get addNewCar => _ar ? '+ إضافة سيارة جديدة' : '+ Add a new car';
+  String get addNewAddress => _ar ? '+ إضافة عنوان جديد' : '+ Enter a new address';
+  String get useDifferentAddress => _ar ? 'استخدام عنوان مختلف' : 'Use a different address';
+  String get searchLocation => _ar ? 'ابحث عن موقع...' : 'Search for a location...';
+  String get searchingLocation => _ar ? 'جارٍ البحث...' : 'Searching...';
 
   // Status & service labels
   String statusLabel(BookingStatus s) => switch (s) {

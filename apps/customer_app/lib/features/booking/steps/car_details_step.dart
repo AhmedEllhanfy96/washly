@@ -32,6 +32,7 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
   String? _selectedColor;
   String? _selectedSavedCarId;
   bool _saveCar = false;
+  bool _showNewCarForm = false;
 
   @override
   void initState() {
@@ -62,12 +63,26 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
       _selectedSavedCarId = car.id;
       _selectedColor = car.color;
       _saveCar = false;
+      _showNewCarForm = false;
     });
     _makeCtrl.text = car.make;
     _modelCtrl.text = car.model;
     _colorCtrl.text = car.color;
     _plateCtrl.text = car.plateNumber;
     _yearCtrl.text = car.year ?? '';
+  }
+
+  void _clearForm() {
+    _makeCtrl.clear();
+    _modelCtrl.clear();
+    _colorCtrl.clear();
+    _plateCtrl.clear();
+    _yearCtrl.clear();
+    setState(() {
+      _selectedColor = null;
+      _selectedSavedCarId = null;
+      _saveCar = false;
+    });
   }
 
   Future<void> _deleteSavedCar(String id) async {
@@ -79,7 +94,11 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_selectedSavedCarId != null) {
+      // Use saved car — controllers already filled from _fillFromSaved
+    } else if (!_formKey.currentState!.validate()) {
+      return;
+    }
     final car = Car(
       make: _makeCtrl.text.trim(),
       model: _modelCtrl.text.trim(),
@@ -109,203 +128,348 @@ class _CarDetailsStepState extends ConsumerState<CarDetailsStep> {
   Widget build(BuildContext context) {
     final savedCarsAsync = ref.watch(savedCarsProvider);
     final l10n = context.l10n;
+    final theme = Theme.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.tellUsAboutCar,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(l10n.carDetailsSubtitle,
-                style: TextStyle(color: Colors.grey[600])),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.tellUsAboutCar,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.carDetailsSubtitle,
+              style: TextStyle(color: Colors.grey[600])),
 
-            // Saved cars
-            savedCarsAsync.when(
-              data: (cars) {
-                if (cars.isEmpty) return const SizedBox(height: 24);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    Text(l10n.yourSavedCars,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 72,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: cars.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
-                        itemBuilder: (_, i) {
-                          final car = cars[i];
-                          final selected = _selectedSavedCarId == car.id;
-                          return GestureDetector(
-                            onTap: () => _fillFromSaved(car),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? Theme.of(context).colorScheme.primaryContainer
-                                    : Colors.grey[100],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: selected
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Colors.grey[300]!,
-                                  width: selected ? 2 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.directions_car,
-                                      size: 20,
-                                      color: selected
-                                          ? Theme.of(context).colorScheme.primary
-                                          : Colors.grey[600]),
-                                  const SizedBox(width: 8),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(car.displayName,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 13,
-                                              color: selected
-                                                  ? Theme.of(context).colorScheme.primary
-                                                  : null)),
-                                      Text(car.plateNumber,
-                                          style: TextStyle(
-                                              fontSize: 12, color: Colors.grey[600])),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () => _deleteSavedCar(car.id),
-                                    child: Icon(Icons.close,
-                                        size: 16, color: Colors.grey[500]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Divider(),
-                  ],
-                );
-              },
-              loading: () => const SizedBox(height: 24),
-              error: (_, __) => const SizedBox(height: 24),
-            ),
-
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _makeCtrl,
-                    decoration: InputDecoration(labelText: l10n.make),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? l10n.required : null,
-                    textCapitalization: TextCapitalization.words,
-                    onChanged: (_) => setState(() => _selectedSavedCarId = null),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _modelCtrl,
-                    decoration: InputDecoration(labelText: l10n.model),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? l10n.required : null,
-                    textCapitalization: TextCapitalization.words,
-                    onChanged: (_) => setState(() => _selectedSavedCarId = null),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _yearCtrl,
-                    decoration: InputDecoration(labelText: l10n.yearOptional),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => setState(() => _selectedSavedCarId = null),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _plateCtrl,
-                    decoration: InputDecoration(labelText: l10n.plateNumber),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? l10n.required : null,
-                    textCapitalization: TextCapitalization.none,
-                    textAlign: TextAlign.right,
-                    onChanged: (_) => setState(() => _selectedSavedCarId = null),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(l10n.carColor,
-                style: const TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _carColors.map((color) {
-                final selected = _selectedColor == color;
-                return ChoiceChip(
-                  label: Text(color),
-                  selected: selected,
-                  onSelected: (_) => setState(() {
-                    _selectedColor = color;
+          savedCarsAsync.when(
+            data: (cars) {
+              if (cars.isEmpty) {
+                return _NewCarForm(
+                  formKey: _formKey,
+                  makeCtrl: _makeCtrl,
+                  modelCtrl: _modelCtrl,
+                  colorCtrl: _colorCtrl,
+                  plateCtrl: _plateCtrl,
+                  yearCtrl: _yearCtrl,
+                  carColors: _carColors,
+                  selectedColor: _selectedColor,
+                  saveCar: _saveCar,
+                  showSaveCheckbox: true,
+                  onColorSelected: (c) => setState(() {
+                    _selectedColor = c;
                     _selectedSavedCarId = null;
                   }),
+                  onSaveChanged: (v) => setState(() => _saveCar = v),
+                  l10n: l10n,
                 );
-              }).toList(),
+              }
+
+              // Has saved cars
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  Text(l10n.yourSavedCars,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 15)),
+                  const SizedBox(height: 12),
+
+                  // Saved car cards
+                  ...cars.map((car) {
+                    final selected = _selectedSavedCarId == car.id;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: InkWell(
+                        onTap: () => _fillFromSaved(car),
+                        borderRadius: BorderRadius.circular(14),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? theme.colorScheme.primaryContainer
+                                : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: selected
+                                  ? theme.colorScheme.primary
+                                  : Colors.grey[300]!,
+                              width: selected ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? theme.colorScheme.primary.withOpacity(0.15)
+                                      : Colors.grey[200],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.directions_car,
+                                    size: 22,
+                                    color: selected
+                                        ? theme.colorScheme.primary
+                                        : Colors.grey[600]),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(car.displayName,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: selected
+                                                ? theme.colorScheme.primary
+                                                : null)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${car.color}  •  ${car.plateNumber}',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (selected)
+                                Icon(Icons.check_circle,
+                                    color: theme.colorScheme.primary, size: 22)
+                              else
+                                IconButton(
+                                  icon: Icon(Icons.close,
+                                      size: 18, color: Colors.grey[400]),
+                                  onPressed: () => _deleteSavedCar(car.id),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+
+                  // Add new car button / form toggle
+                  if (!_showNewCarForm)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _clearForm();
+                        setState(() => _showNewCarForm = true);
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(l10n.addNewCar),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    )
+                  else ...[
+                    Row(
+                      children: [
+                        Text(l10n.addNewCar,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 14)),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => setState(() {
+                            _showNewCarForm = false;
+                            _clearForm();
+                          }),
+                          child: Text(l10n.cancel),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    _NewCarForm(
+                      formKey: _formKey,
+                      makeCtrl: _makeCtrl,
+                      modelCtrl: _modelCtrl,
+                      colorCtrl: _colorCtrl,
+                      plateCtrl: _plateCtrl,
+                      yearCtrl: _yearCtrl,
+                      carColors: _carColors,
+                      selectedColor: _selectedColor,
+                      saveCar: _saveCar,
+                      showSaveCheckbox: true,
+                      onColorSelected: (c) => setState(() {
+                        _selectedColor = c;
+                        _selectedSavedCarId = null;
+                      }),
+                      onSaveChanged: (v) => setState(() => _saveCar = v),
+                      l10n: l10n,
+                    ),
+                  ],
+                ],
+              );
+            },
+            loading: () =>
+                const Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error: (_, __) => _NewCarForm(
+              formKey: _formKey,
+              makeCtrl: _makeCtrl,
+              modelCtrl: _modelCtrl,
+              colorCtrl: _colorCtrl,
+              plateCtrl: _plateCtrl,
+              yearCtrl: _yearCtrl,
+              carColors: _carColors,
+              selectedColor: _selectedColor,
+              saveCar: _saveCar,
+              showSaveCheckbox: false,
+              onColorSelected: (c) => setState(() => _selectedColor = c),
+              onSaveChanged: (v) => setState(() => _saveCar = v),
+              l10n: l10n,
             ),
-            if (_selectedColor == null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
+          ),
+
+          const SizedBox(height: 32),
+          PrimaryButton(
+            label: l10n.continueBtn,
+            onPressed: (_selectedSavedCarId != null || _showNewCarForm || savedCarsAsync.valueOrNull?.isEmpty == true)
+                ? _submit
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NewCarForm extends StatelessWidget {
+  final GlobalKey<FormState> formKey;
+  final TextEditingController makeCtrl;
+  final TextEditingController modelCtrl;
+  final TextEditingController colorCtrl;
+  final TextEditingController plateCtrl;
+  final TextEditingController yearCtrl;
+  final List<String> carColors;
+  final String? selectedColor;
+  final bool saveCar;
+  final bool showSaveCheckbox;
+  final void Function(String) onColorSelected;
+  final void Function(bool) onSaveChanged;
+  final AppLocalizations l10n;
+
+  const _NewCarForm({
+    required this.formKey,
+    required this.makeCtrl,
+    required this.modelCtrl,
+    required this.colorCtrl,
+    required this.plateCtrl,
+    required this.yearCtrl,
+    required this.carColors,
+    required this.selectedColor,
+    required this.saveCar,
+    required this.showSaveCheckbox,
+    required this.onColorSelected,
+    required this.onSaveChanged,
+    required this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
                 child: TextFormField(
-                  controller: _colorCtrl,
-                  decoration: InputDecoration(labelText: l10n.otherColor),
+                  controller: makeCtrl,
+                  decoration: InputDecoration(labelText: l10n.make),
                   validator: (v) =>
-                      (_selectedColor == null && (v == null || v.isEmpty))
-                          ? l10n.selectOrEnterColor
-                          : null,
+                      (v == null || v.isEmpty) ? l10n.required : null,
+                  textCapitalization: TextCapitalization.words,
                 ),
               ),
-
-            if (_selectedSavedCarId == null) ...[
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _saveCar,
-                onChanged: (v) => setState(() => _saveCar = v ?? false),
-                title: Text(l10n.saveCarForNextTime,
-                    style: const TextStyle(fontSize: 14)),
-                controlAffinity: ListTileControlAffinity.leading,
-                dense: true,
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: modelCtrl,
+                  decoration: InputDecoration(labelText: l10n.model),
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? l10n.required : null,
+                  textCapitalization: TextCapitalization.words,
+                ),
               ),
             ],
-
-            const SizedBox(height: 32),
-            PrimaryButton(label: l10n.continueBtn, onPressed: _submit),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: yearCtrl,
+                  decoration: InputDecoration(labelText: l10n.yearOptional),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: plateCtrl,
+                  decoration: InputDecoration(labelText: l10n.plateNumber),
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? l10n.required : null,
+                  textCapitalization: TextCapitalization.none,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(l10n.carColor,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: carColors.map((color) {
+              final sel = selectedColor == color;
+              return ChoiceChip(
+                label: Text(color),
+                selected: sel,
+                onSelected: (_) => onColorSelected(color),
+              );
+            }).toList(),
+          ),
+          if (selectedColor == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: TextFormField(
+                controller: colorCtrl,
+                decoration: InputDecoration(labelText: l10n.otherColor),
+                validator: (v) =>
+                    (selectedColor == null && (v == null || v.isEmpty))
+                        ? l10n.selectOrEnterColor
+                        : null,
+              ),
+            ),
+          if (showSaveCheckbox) ...[
+            const SizedBox(height: 12),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: saveCar,
+              onChanged: (v) => onSaveChanged(v ?? false),
+              title: Text(l10n.saveCarForNextTime,
+                  style: const TextStyle(fontSize: 14)),
+              controlAffinity: ListTileControlAffinity.leading,
+              dense: true,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
