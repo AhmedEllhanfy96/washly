@@ -97,7 +97,21 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   Future<void> _goToMyLocation() async {
     setState(() => _locating = true);
     try {
-      if (!kIsWeb) {
+      if (kIsWeb) {
+        // Chrome blocks geolocation on HTTP (non-localhost)
+        final base = Uri.base;
+        final secure = base.scheme == 'https' ||
+            base.host == 'localhost' ||
+            base.host == '127.0.0.1';
+        if (!secure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.l10n.locationRequiresHttps)),
+            );
+          }
+          return;
+        }
+      } else {
         var permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
@@ -112,7 +126,9 @@ class _LocationStepState extends ConsumerState<LocationStep> {
         }
       }
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy:
+            kIsWeb ? LocationAccuracy.medium : LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
       );
       final point = LatLng(pos.latitude, pos.longitude);
       setState(() {
@@ -121,7 +137,13 @@ class _LocationStepState extends ConsumerState<LocationStep> {
         _showNewAddressForm = true;
       });
       _mapController.move(point, 16);
-    } catch (_) {
+    } on TimeoutException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.couldNotGetGps)),
+        );
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
