@@ -47,6 +47,11 @@ class DashboardScreen extends ConsumerWidget {
             onPressed: () => context.go('/dashboard/bookings'),
           ),
           IconButton(
+            icon: const Icon(Icons.attach_money),
+            tooltip: 'Pricing',
+            onPressed: () => context.go('/dashboard/pricing'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(adminAuthProvider.notifier).signOut(),
           ),

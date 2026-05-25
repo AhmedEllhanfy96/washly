@@ -88,7 +88,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
             ConfirmationStep(
               onConfirmed: () {
                 ref.read(bookingFlowProvider.notifier).reset();
-                context.go('/home');
+                context.go('/home/success');
               },
             ),
           ],

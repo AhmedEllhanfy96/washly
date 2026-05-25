@@ -64,6 +64,9 @@ class AppLocalizations {
   String get profileUpdated => _ar ? 'تم تحديث الملف الشخصي بنجاح' : 'Profile updated successfully';
   String get saveChanges => _ar ? 'حفظ التغييرات' : 'Save Changes';
 
+  // Navigation
+  String get home => _ar ? 'الرئيسية' : 'Home';
+
   // Home
   String helloName(String name) => _ar ? 'مرحباً، $name 👋' : 'Hello, $name 👋';
   String get helloThere => _ar ? 'مرحباً! 👋' : 'Hello!';
@@ -198,6 +201,13 @@ class AppLocalizations {
   String get submitBooking => _ar ? 'إرسال الحجز' : 'Submit Booking';
   String get bookingSubmitted =>
       _ar ? 'تم إرسال الحجز! سنؤكده قريباً.' : "Booking submitted! We'll confirm shortly.";
+  String get bookingConfirmedTitle =>
+      _ar ? 'تم استلام حجزك!' : 'Booking Received!';
+  String get bookingConfirmedBody =>
+      _ar ? 'سنراجع طلبك ونرسل لك تأكيداً قريباً.\nيمكنك متابعة حالة الحجز من قسم حجوزاتي.'
+          : "We've received your booking and will confirm it shortly.\nTrack it anytime in My Bookings.";
+  String get viewMyBookings => _ar ? 'حجوزاتي' : 'View My Bookings';
+  String get backToHome => _ar ? 'العودة للرئيسية' : 'Back to Home';
   String failedToSubmit(String err) =>
       _ar ? 'فشل الإرسال: $err' : 'Failed to submit: $err';
 

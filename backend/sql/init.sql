@@ -82,6 +82,18 @@ CREATE TABLE IF NOT EXISTS schedule_config (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO app_settings (key, value) VALUES
+  ('price_exterior_only', '195'),
+  ('price_interior_only', '220'),
+  ('price_full_service',  '250')
+ON CONFLICT (key) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

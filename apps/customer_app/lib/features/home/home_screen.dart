@@ -7,6 +7,7 @@ import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/booking_provider.dart';
+import '../../core/providers/pricing_provider.dart';
 import '../../shared/widgets/booking_status_card.dart';
 import '../../shared/widgets/language_toggle_button.dart';
 
@@ -17,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authProvider);
     final bookings = ref.watch(userBookingsProvider);
+    final pricing = ref.watch(pricingProvider);
     final l10n = context.l10n;
     final theme = Theme.of(context);
 
@@ -32,15 +34,6 @@ class HomeScreen extends ConsumerWidget {
               IconTheme(
                 data: const IconThemeData(color: Colors.white),
                 child: const LanguageToggleButton(),
-              ),
-              IconButton(
-                icon: const Icon(Icons.person_outline, color: Colors.white),
-                tooltip: l10n.profile,
-                onPressed: () => context.go('/profile'),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                onPressed: () => ref.read(authProvider.notifier).signOut(),
               ),
             ],
             title: Text(l10n.appTitle,
@@ -144,7 +137,8 @@ class HomeScreen extends ConsumerWidget {
                     imageUrl: AppConfig.imgExterior,
                     gradientColors: const [Color(0xFF1565C0), Color(0xFF00ACC1)],
                     title: l10n.exteriorOnlyShort,
-                    price: '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
+                    price: pricing.whenOrNull(data: (p) => p.exteriorLabel) ??
+                        '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
                     onTap: () => context.go('/home/book'),
                   ),
                   const SizedBox(width: 12),
@@ -152,7 +146,8 @@ class HomeScreen extends ConsumerWidget {
                     imageUrl: AppConfig.imgInterior,
                     gradientColors: const [Color(0xFF00695C), Color(0xFF4CAF50)],
                     title: l10n.interiorOnlyShort,
-                    price: '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
+                    price: pricing.whenOrNull(data: (p) => p.interiorLabel) ??
+                        '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
                     onTap: () => context.go('/home/book'),
                   ),
                   const SizedBox(width: 12),
@@ -160,7 +155,8 @@ class HomeScreen extends ConsumerWidget {
                     imageUrl: AppConfig.imgFullService,
                     gradientColors: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
                     title: l10n.fullServiceShort,
-                    price: '${AppConfig.priceFullService} ${AppConfig.currency}',
+                    price: pricing.whenOrNull(data: (p) => p.fullServiceLabel) ??
+                        '${AppConfig.priceFullService} ${AppConfig.currency}',
                     onTap: () => context.go('/home/book'),
                   ),
                 ],
@@ -268,9 +264,10 @@ class HomeScreen extends ConsumerWidget {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: TextButton(
+                  child: TextButton.icon(
                     onPressed: () => context.go('/history'),
-                    child: Text(l10n.viewAllBookings),
+                    icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                    label: Text(l10n.viewAllBookings),
                   ),
                 ),
               ),
