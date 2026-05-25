@@ -140,6 +140,8 @@ class AppLocalizations {
       _ar ? 'الرجاء إدخال عنوان شارعك.' : 'Please enter your street address.';
   String get locationDenied =>
       _ar ? 'تم رفض الموقع. حرّك دبوس الخريطة يدوياً.' : 'Location denied. Move the map pin manually.';
+  String get locationServiceDisabled =>
+      _ar ? 'خدمة الموقع معطّلة. فعّلها من إعدادات الجهاز.' : 'Location service is off. Enable it in device settings.';
   String get locationDeniedBrowser => _ar
       ? 'أتح الموقع في المتصفح، أو حرّك دبوس الخريطة يدوياً.'
       : 'Allow location in your browser, or drag the map pin manually.';

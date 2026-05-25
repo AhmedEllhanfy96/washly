@@ -112,11 +112,21 @@ class _LocationStepState extends ConsumerState<LocationStep> {
           return;
         }
       } else {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.l10n.locationServiceDisabled)),
+            );
+          }
+          return;
+        }
         var permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
         }
-        if (permission == LocationPermission.deniedForever) {
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(context.l10n.locationDenied)),
