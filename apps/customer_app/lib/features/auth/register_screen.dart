@@ -89,8 +89,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   decoration: InputDecoration(
                       labelText: l10n.phoneNumber,
                       prefixIcon: const Icon(Icons.phone_outlined)),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? l10n.required : null,
+                  validator: (v) {
+                    final digits = v?.replaceAll(RegExp(r'\D'), '') ?? '';
+                    if (digits.isEmpty) return l10n.required;
+                    if (digits.length < 11) return l10n.phoneTooShort;
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

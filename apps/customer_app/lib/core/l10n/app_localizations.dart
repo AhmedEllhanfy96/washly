@@ -42,6 +42,7 @@ class AppLocalizations {
   String get editProfile => _ar ? 'تعديل الملف الشخصي' : 'Edit Profile';
   String get personalInfo => _ar ? 'المعلومات الشخصية' : 'Personal Information';
   String get phoneNumber => _ar ? 'رقم الهاتف' : 'Phone Number';
+  String get phoneTooShort => _ar ? 'رقم الهاتف يجب أن يكون 11 رقماً على الأقل' : 'Phone must be at least 11 digits';
   String get changePassword => _ar ? 'تغيير كلمة المرور' : 'Change Password';
   String get currentPassword => _ar ? 'كلمة المرور الحالية' : 'Current Password';
   String get newPassword => _ar ? 'كلمة المرور الجديدة' : 'New Password';
