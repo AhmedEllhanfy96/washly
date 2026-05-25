@@ -82,6 +82,15 @@ CREATE TABLE IF NOT EXISTS schedule_config (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT UNIQUE NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Default admin (password: admin123) — change in production
 INSERT INTO users (email, password_hash, name, role)
 VALUES ('admin@washly.com', crypt('admin123', gen_salt('bf')), 'Admin', 'admin')

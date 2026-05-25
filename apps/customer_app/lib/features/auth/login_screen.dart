@@ -194,7 +194,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                     FontWeight.w600)),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 4),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: () => context.go('/forgot-password'),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(l10n.forgotPassword,
+                                        style: const TextStyle(fontSize: 13)),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
                                 Center(
                                   child: TextButton(
                                     onPressed: () => context.go('/register'),

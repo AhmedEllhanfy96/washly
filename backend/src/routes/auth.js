@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { pool } from '../db.js';
+import { sendPasswordResetEmail } from '../email.js';
 
 export default async function (app) {
   app.post('/register', async (req, reply) => {
@@ -76,5 +78,63 @@ export default async function (app) {
       values
     );
     return rows[0];
+  });
+
+  app.post('/forgot-password', async (req, reply) => {
+    const { email } = req.body ?? {};
+    if (!email) return reply.status(400).send({ error: 'email is required' });
+
+    const { rows } = await pool.query(
+      'SELECT id FROM users WHERE email = $1 AND role = $2',
+      [email.toLowerCase().trim(), 'customer']
+    );
+
+    if (rows.length > 0) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [rows[0].id]);
+      await pool.query(
+        'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+        [rows[0].id, token, expiresAt]
+      );
+
+      const appUrl = (process.env.CUSTOMER_APP_URL || 'http://localhost').replace(/\/$/, '');
+      const resetUrl = `${appUrl}/reset-password?token=${token}`;
+
+      try {
+        await sendPasswordResetEmail(email.toLowerCase().trim(), resetUrl);
+      } catch (e) {
+        console.error('Failed to send reset email:', e.message);
+      }
+    }
+
+    // Always return the same message so we don't reveal whether email exists
+    return reply.send({ message: 'If that email is registered, a reset link was sent.' });
+  });
+
+  app.post('/reset-password', async (req, reply) => {
+    const { token, newPassword } = req.body ?? {};
+    if (!token || !newPassword) {
+      return reply.status(400).send({ error: 'token and newPassword are required' });
+    }
+    if (newPassword.length < 6) {
+      return reply.status(400).send({ error: 'Password must be at least 6 characters' });
+    }
+
+    const { rows } = await pool.query(
+      'SELECT * FROM password_reset_tokens WHERE token = $1 AND used = FALSE AND expires_at > NOW()',
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return reply.status(400).send({ error: 'Reset link is invalid or has expired.' });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, rows[0].user_id]);
+    await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE id = $1', [rows[0].id]);
+
+    return reply.send({ message: 'Password reset successfully.' });
   });
 }

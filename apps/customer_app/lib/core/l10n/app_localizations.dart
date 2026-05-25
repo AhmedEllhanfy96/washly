@@ -37,6 +37,20 @@ class AppLocalizations {
   String get atLeast6Chars => _ar ? '6 أحرف على الأقل' : 'At least 6 characters';
   String get alreadyHaveAccount =>
       _ar ? 'لديك حساب بالفعل؟ سجّل الدخول' : 'Already have an account? Sign in';
+  String get forgotPassword => _ar ? 'نسيت كلمة المرور؟' : 'Forgot password?';
+  String get resetLinkSentHint =>
+      _ar ? 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.'
+          : 'Enter your email and we\'ll send you a reset link.';
+  String get resetPassword => _ar ? 'إعادة تعيين كلمة المرور' : 'Reset Password';
+  String get sendResetLink => _ar ? 'إرسال رابط الاستعادة' : 'Send Reset Link';
+  String get resetLinkSent =>
+      _ar ? 'تم الإرسال! تحقق من بريدك الإلكتروني.' : 'Sent! Check your email.';
+  String get newPassword => _ar ? 'كلمة المرور الجديدة' : 'New Password';
+  String get confirmNewPassword => _ar ? 'تأكيد كلمة المرور' : 'Confirm Password';
+  String get passwordResetSuccess =>
+      _ar ? 'تم تغيير كلمة المرور. يمكنك تسجيل الدخول الآن.' : 'Password changed. You can sign in now.';
+  String get invalidResetLink =>
+      _ar ? 'الرابط غير صالح أو منتهي الصلاحية.' : 'Link is invalid or expired.';
   String get required => _ar ? 'مطلوب' : 'Required';
   String get profile => _ar ? 'الملف الشخصي' : 'Profile';
   String get editProfile => _ar ? 'تعديل الملف الشخصي' : 'Edit Profile';

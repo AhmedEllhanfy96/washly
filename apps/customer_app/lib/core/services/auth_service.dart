@@ -84,4 +84,22 @@ class AuthService {
       throw Exception(msg);
     }
   }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _dio.post('/auth/forgot-password', data: {'email': email});
+    } on DioException catch (e) {
+      final msg = (e.response?.data as Map?)?['error'] as String? ?? 'Request failed';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> resetPassword({required String token, required String newPassword}) async {
+    try {
+      await _dio.post('/auth/reset-password', data: {'token': token, 'newPassword': newPassword});
+    } on DioException catch (e) {
+      final msg = (e.response?.data as Map?)?['error'] as String? ?? 'Reset failed';
+      throw Exception(msg);
+    }
+  }
 }
