@@ -1,3 +1,5 @@
+import '../config/app_config.dart';
+
 class TimeSlot {
   final String startTime;
   final String endTime;
@@ -28,35 +30,44 @@ class TimeSlot {
 
   factory TimeSlot.fromJson(Map<String, dynamic> json) {
     final start = (json['startTime'] ?? json['time']) as String;
-    final end = json['endTime'] as String? ?? addTwoHours(start);
+    final end = json['endTime'] as String? ?? _addHours(start, AppConfig.slotDurationHours);
     return TimeSlot(
       startTime: start,
       endTime: end,
       available: json['available'] as bool? ?? true,
-      maxBookings: (json['maxBookings'] as num?)?.toInt() ?? 3,
+      maxBookings: (json['maxBookings'] as num?)?.toInt() ?? AppConfig.maxBookingsPerSlot,
       currentBookings: (json['currentBookings'] as num?)?.toInt() ?? 0,
     );
   }
 
-  static String addTwoHours(String t) {
+  static String addTwoHours(String t) => _addHours(t, AppConfig.slotDurationHours);
+
+  static String _addHours(String t, int hours) {
     final parts = t.split(':');
-    final h = (int.parse(parts[0]) + 2) % 24;
+    final h = (int.parse(parts[0]) + hours) % 24;
     return '${h.toString().padLeft(2, '0')}:${parts[1]}';
   }
 
-  static List<TimeSlot> defaultSlots() => [
-        ('08:00', '10:00'),
-        ('10:00', '12:00'),
-        ('12:00', '14:00'),
-        ('14:00', '16:00'),
-        ('16:00', '18:00'),
-      ]
-          .map((p) => TimeSlot(
-                startTime: p.$1,
-                endTime: p.$2,
-                available: true,
-                maxBookings: 3,
-                currentBookings: 0,
-              ))
-          .toList();
+  static List<TimeSlot> defaultSlots() {
+    final slots = <(String, String)>[];
+    var hour = int.parse(AppConfig.dayStart.split(':')[0]);
+    final endHour = int.parse(AppConfig.dayEnd.split(':')[0]);
+    while (hour < endHour) {
+      final next = hour + AppConfig.slotDurationHours;
+      slots.add((
+        '${hour.toString().padLeft(2, '0')}:00',
+        '${next.toString().padLeft(2, '0')}:00',
+      ));
+      hour = next;
+    }
+    return slots
+        .map((p) => TimeSlot(
+              startTime: p.$1,
+              endTime: p.$2,
+              available: true,
+              maxBookings: AppConfig.maxBookingsPerSlot,
+              currentBookings: 0,
+            ))
+        .toList();
+  }
 }

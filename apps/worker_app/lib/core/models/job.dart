@@ -1,3 +1,5 @@
+import '../config/app_config.dart';
+
 enum JobStatus {
   pending,
   confirmed,
@@ -66,9 +68,11 @@ class Job {
   }
 
   String get serviceName => switch (serviceType) {
-    'fullService' => 'Full Interior + Exterior — 250 EGP',
-    'interiorOnly' => 'Interior Only — 220 EGP',
-    _ => 'Exterior Only — 195 EGP',
+    'fullService' =>
+      'Full Interior + Exterior — ${AppConfig.priceFullService} ${AppConfig.currency}',
+    'interiorOnly' =>
+      'Interior Only — ${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
+    _ => 'Exterior Only — ${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
   };
 
   bool get isToday {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_config.dart';
+
 class AppLocalizations {
   final Locale locale;
   const AppLocalizations(this.locale);
@@ -60,9 +62,15 @@ class AppLocalizations {
       _ar ? 'تم تحديث الحالة إلى $status' : 'Status updated to $status';
 
   String serviceNameFor(String serviceType) => switch (serviceType) {
-    'fullService' => _ar ? 'خارجي + داخلي كامل — 250 ج.م.' : 'Full Interior + Exterior — 250 EGP',
-    'interiorOnly' => _ar ? 'داخلي فقط — 220 ج.م.' : 'Interior Only — 220 EGP',
-    _ => _ar ? 'خارجي فقط — 195 ج.م.' : 'Exterior Only — 195 EGP',
+    'fullService' => _ar
+        ? 'خارجي + داخلي كامل — ${AppConfig.priceFullService} ج.م.'
+        : 'Full Interior + Exterior — ${AppConfig.priceFullService} ${AppConfig.currency}',
+    'interiorOnly' => _ar
+        ? 'داخلي فقط — ${AppConfig.priceInteriorOnly} ج.م.'
+        : 'Interior Only — ${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
+    _ => _ar
+        ? 'خارجي فقط — ${AppConfig.priceExteriorOnly} ج.م.'
+        : 'Exterior Only — ${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
   };
 
   // Status labels

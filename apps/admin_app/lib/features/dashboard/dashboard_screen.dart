@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/models/team_member.dart';
@@ -97,9 +98,9 @@ class DashboardScreen extends ConsumerWidget {
           int revenue = 0;
           for (final b in completedToday) {
             revenue += switch (b.serviceType) {
-              ServiceType.exteriorOnly => 195,
-              ServiceType.interiorOnly => 220,
-              ServiceType.fullService => 250,
+              ServiceType.exteriorOnly => AppConfig.priceExteriorOnly,
+              ServiceType.interiorOnly => AppConfig.priceInteriorOnly,
+              ServiceType.fullService => AppConfig.priceFullService,
             };
           }
 
@@ -227,7 +228,7 @@ class DashboardScreen extends ConsumerWidget {
                   )
                 else
                   ...pending
-                      .take(10)
+                      .take(AppConfig.dashboardPendingLimit)
                       .map((b) => _PendingBookingCard(booking: b, now: now)),
               ],
             ),
@@ -429,7 +430,7 @@ class _PendingBookingCard extends StatelessWidget {
             ? '${diff.inHours}h'
             : '${diff.inDays}d';
     final waitColor =
-        diff.inHours >= 2 ? Colors.red : Colors.orange;
+        diff.inHours >= AppConfig.pendingAlertHours ? Colors.red : Colors.orange;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

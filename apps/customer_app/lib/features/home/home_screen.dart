@@ -3,21 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/booking_provider.dart';
 import '../../shared/widgets/booking_status_card.dart';
 import '../../shared/widgets/language_toggle_button.dart';
-
-// Unsplash free photos — replace with owned images for production
-const _heroImg =
-    'https://images.unsplash.com/photo-1520340596035-7f3b89e01f63?w=900&q=80&fit=crop';
-const _exteriorImg =
-    'https://images.unsplash.com/photo-1616421016789-5a1e8f9bc0f5?w=400&q=80&fit=crop';
-const _interiorImg =
-    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=80&fit=crop';
-const _fullImg =
-    'https://images.unsplash.com/photo-1614602849278-7c9c29f55b2e?w=400&q=80&fit=crop';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -35,7 +26,7 @@ class HomeScreen extends ConsumerWidget {
         slivers: [
           // ── Collapsible hero app bar ─────────────────────────────────
           SliverAppBar(
-            expandedHeight: 270,
+            expandedHeight: AppConfig.heroExpandedHeight,
             pinned: true,
             actions: [
               IconTheme(
@@ -61,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   // Hero photo
                   CachedNetworkImage(
-                    imageUrl: _heroImg,
+                    imageUrl: AppConfig.imgHero,
                     fit: BoxFit.cover,
                     placeholder: (_, __) =>
                         const ColoredBox(color: Color(0xFF0D47A1)),
@@ -150,26 +141,26 @@ class HomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
                   _ServiceCard(
-                    imageUrl: _exteriorImg,
+                    imageUrl: AppConfig.imgExterior,
                     gradientColors: const [Color(0xFF1565C0), Color(0xFF00ACC1)],
                     title: l10n.exteriorOnlyShort,
-                    price: '195 EGP',
+                    price: '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
                     onTap: () => context.go('/home/book'),
                   ),
                   const SizedBox(width: 12),
                   _ServiceCard(
-                    imageUrl: _interiorImg,
+                    imageUrl: AppConfig.imgInterior,
                     gradientColors: const [Color(0xFF00695C), Color(0xFF4CAF50)],
                     title: l10n.interiorOnlyShort,
-                    price: '220 EGP',
+                    price: '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
                     onTap: () => context.go('/home/book'),
                   ),
                   const SizedBox(width: 12),
                   _ServiceCard(
-                    imageUrl: _fullImg,
+                    imageUrl: AppConfig.imgFullService,
                     gradientColors: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
                     title: l10n.fullServiceShort,
-                    price: '250 EGP',
+                    price: '${AppConfig.priceFullService} ${AppConfig.currency}',
                     onTap: () => context.go('/home/book'),
                   ),
                 ],
@@ -253,7 +244,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 );
               }
-              final recent = list.take(3).toList();
+              final recent = list.take(AppConfig.homeRecentBookingsLimit).toList();
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (_, i) => Padding(

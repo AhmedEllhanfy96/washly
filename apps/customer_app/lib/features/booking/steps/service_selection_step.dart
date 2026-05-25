@@ -2,17 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../shared/widgets/primary_button.dart';
-
-const _exteriorImg =
-    'https://images.unsplash.com/photo-1616421016789-5a1e8f9bc0f5?w=600&q=80&fit=crop';
-const _interiorImg =
-    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80&fit=crop';
-const _fullImg =
-    'https://images.unsplash.com/photo-1614602849278-7c9c29f55b2e?w=600&q=80&fit=crop';
 
 class ServiceSelectionStep extends ConsumerWidget {
   final VoidCallback onNext;
@@ -38,10 +32,10 @@ class ServiceSelectionStep extends ConsumerWidget {
                     style: TextStyle(color: Colors.grey[600])),
                 const SizedBox(height: 20),
                 _ServiceCard(
-                  imageUrl: _exteriorImg,
+                  imageUrl: AppConfig.imgExterior,
                   title: l10n.exteriorOnly,
                   description: l10n.exteriorOnlyDesc,
-                  price: '195 EGP',
+                  price: '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
                   features: [
                     l10n.featExteriorWash,
                     l10n.featWheelCleaning,
@@ -56,10 +50,10 @@ class ServiceSelectionStep extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _ServiceCard(
-                  imageUrl: _interiorImg,
+                  imageUrl: AppConfig.imgInterior,
                   title: l10n.interiorOnly,
                   description: l10n.interiorOnlyDesc,
-                  price: '220 EGP',
+                  price: '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
                   features: [
                     l10n.featVacuum,
                     l10n.featDashboardWipe,
@@ -74,10 +68,10 @@ class ServiceSelectionStep extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _ServiceCard(
-                  imageUrl: _fullImg,
+                  imageUrl: AppConfig.imgFullService,
                   title: l10n.fullService,
                   description: l10n.fullServiceDesc,
-                  price: '250 EGP',
+                  price: '${AppConfig.priceFullService} ${AppConfig.currency}',
                   features: [
                     l10n.featEverythingExterior,
                     l10n.featVacuum,

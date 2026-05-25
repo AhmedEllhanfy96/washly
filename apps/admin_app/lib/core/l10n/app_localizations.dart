@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_config.dart';
 import '../models/booking.dart';
 
 class AppLocalizations {
@@ -208,12 +209,15 @@ class AppLocalizations {
       };
 
   String serviceTypeDetail(ServiceType t) => switch (t) {
-        ServiceType.exteriorOnly =>
-          _ar ? 'خارجي فقط — 195 ج.م.' : 'Exterior Only — 195 EGP',
-        ServiceType.interiorOnly =>
-          _ar ? 'داخلي فقط — 220 ج.م.' : 'Interior Only — 220 EGP',
-        ServiceType.fullService =>
-          _ar ? 'خارجي + داخلي كامل — 250 ج.م.' : 'Full Interior + Exterior — 250 EGP',
+        ServiceType.exteriorOnly => _ar
+            ? 'خارجي فقط — ${AppConfig.priceExteriorOnly} ج.م.'
+            : 'Exterior Only — ${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
+        ServiceType.interiorOnly => _ar
+            ? 'داخلي فقط — ${AppConfig.priceInteriorOnly} ج.م.'
+            : 'Interior Only — ${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
+        ServiceType.fullService => _ar
+            ? 'خارجي + داخلي كامل — ${AppConfig.priceFullService} ج.م.'
+            : 'Full Interior + Exterior — ${AppConfig.priceFullService} ${AppConfig.currency}',
       };
 }
 

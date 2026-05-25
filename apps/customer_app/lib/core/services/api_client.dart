@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_config.dart';
+
 SharedPreferences? _prefsCache;
 
 Future<SharedPreferences> _getPrefs() async =>
@@ -15,10 +17,7 @@ Future<void> writePref(String key, String value) async =>
 Future<void> deletePref(String key) async =>
     (await _getPrefs()).remove(key);
 
-const defaultServerUrl = String.fromEnvironment(
-  'API_URL',
-  defaultValue: 'http://150.230.53.189:3000',
-);
+const defaultServerUrl = AppConfig.defaultApiUrl;
 
 Future<String> getApiUrl() async => defaultServerUrl;
 
@@ -29,8 +28,8 @@ Future<String> getWsUrl() async => defaultServerUrl
 
 Dio createDio() {
   final dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: AppConfig.apiConnectTimeout,
+    receiveTimeout: AppConfig.apiReceiveTimeout,
   ));
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) async {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/customer_account.dart';
 import '../../core/providers/customers_provider.dart';
@@ -93,7 +94,7 @@ class _CustomerTile extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         final digits = customer.phone.replaceAll(RegExp(r'\D'), '');
-                        _launch('https://wa.me/$digits');
+                        _launch('${AppConfig.whatsAppUrl}$digits');
                       },
                       icon: const Icon(Icons.chat, color: Colors.white),
                       label: Text(l10n.whatsappCustomer,

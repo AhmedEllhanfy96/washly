@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../config/app_config.dart';
 import 'api_client.dart';
 
 final wsServiceProvider = Provider<WsService>((ref) => WsService());
@@ -24,7 +25,7 @@ class WsService {
     final uri = Uri.parse('$wsBase${token != null ? '?token=$token' : ''}');
     try {
       _channel = WebSocketChannel.connect(uri);
-      await _channel!.ready.timeout(const Duration(seconds: 5));
+      await _channel!.ready.timeout(AppConfig.wsConnectTimeout);
       _channel!.stream.listen(
         (msg) {
           if (_disposed) return;
@@ -43,7 +44,7 @@ class WsService {
 
   void _reconnect() {
     if (_disposed) return;
-    Future.delayed(const Duration(seconds: 3), connect);
+    Future.delayed(AppConfig.wsReconnectDelay, connect);
   }
 
   void disconnect() {

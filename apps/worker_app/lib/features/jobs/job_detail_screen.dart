@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_config.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/job.dart';
 import '../../core/services/job_service.dart';
@@ -73,10 +75,10 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
     final Uri url;
     if (_job.latitude != 0 && _job.longitude != 0) {
       url = Uri.parse(
-          'https://www.google.com/maps/dir/?api=1&destination=${_job.latitude},${_job.longitude}');
+          '${AppConfig.googleMapsDirectionsUrl}${_job.latitude},${_job.longitude}');
     } else {
       final encoded = Uri.encodeComponent(_job.address);
-      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$encoded');
+      url = Uri.parse('${AppConfig.googleMapsSearchUrl}$encoded');
     }
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
@@ -123,7 +125,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                urlTemplate: AppConfig.osmTileUrl,
                                 userAgentPackageName: 'com.washly.worker',
                               ),
                               MarkerLayer(markers: [
@@ -337,10 +339,10 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 4),
           ),
           IconButton(
-            icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 20),
+            icon: Icon(Icons.chat, color: AppColors.whatsApp, size: 20),
             onPressed: () {
               final digits = phone.replaceAll(RegExp(r'\D'), '');
-              launchUrl(Uri.parse('https://wa.me/$digits'),
+              launchUrl(Uri.parse('${AppConfig.whatsAppUrl}$digits'),
                   mode: LaunchMode.externalApplication);
             },
             tooltip: l10n.whatsappCustomer,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 
@@ -9,11 +10,11 @@ class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.status});
 
   Color get _color => switch (status) {
-        BookingStatus.pending => const Color(0xFFFFA726),
-        BookingStatus.confirmed => const Color(0xFF42A5F5),
-        BookingStatus.inProgress => const Color(0xFFAB47BC),
-        BookingStatus.completed => const Color(0xFF66BB6A),
-        BookingStatus.cancelled => const Color(0xFFEF5350),
+        BookingStatus.pending => AppColors.statusPending,
+        BookingStatus.confirmed => AppColors.statusConfirmed,
+        BookingStatus.inProgress => AppColors.statusInProgress,
+        BookingStatus.completed => AppColors.statusCompleted,
+        BookingStatus.cancelled => AppColors.statusCancelled,
       };
 
   IconData get _icon => switch (status) {

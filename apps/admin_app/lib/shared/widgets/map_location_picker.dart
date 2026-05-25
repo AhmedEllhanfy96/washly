@@ -7,9 +7,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 
-const _cairoCenter = LatLng(30.0444, 31.2357);
+final _cairoCenter = LatLng(AppConfig.defaultLat, AppConfig.defaultLng);
 
 // Height of the bottom confirm panel (label + field + button + padding)
 const _panelHeight = 196.0;
@@ -131,7 +132,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
 
   void _onSearchChanged(String query) {
     _debounce?.cancel();
-    if (query.trim().length < 3) {
+    if (query.trim().length < AppConfig.locationSearchMinChars) {
       setState(() {
         _searchResults = [];
         _showSearchResults = false;
@@ -139,7 +140,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
       return;
     }
     setState(() => _searchLoading = true);
-    _debounce = Timer(const Duration(milliseconds: 600), () async {
+    _debounce = Timer(AppConfig.searchDebounce, () async {
       final results = await _nominatimSearch(query.trim());
       if (mounted) {
         setState(() {
@@ -154,19 +155,19 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
   Future<List<_SearchResult>> _nominatimSearch(String query) async {
     try {
       final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 6),
-        receiveTimeout: const Duration(seconds: 6),
+        connectTimeout: AppConfig.nominatimTimeout,
+        receiveTimeout: AppConfig.nominatimTimeout,
       ));
       final res = await dio.get<List<dynamic>>(
-        'https://nominatim.openstreetmap.org/search',
+        AppConfig.nominatimSearchUrl,
         queryParameters: {
           'q': query,
           'format': 'json',
-          'limit': '5',
-          'countrycodes': 'eg',
+          'limit': '${AppConfig.nominatimResultLimit}',
+          'countrycodes': AppConfig.searchCountryCode,
           'accept-language': 'ar,en',
         },
-        options: Options(headers: {'User-Agent': 'WashlyApp/1.0'}),
+        options: Options(headers: {'User-Agent': AppConfig.userAgent}),
       );
       return (res.data ?? []).map((e) {
         final parts = (e['display_name'] as String).split(', ');
@@ -265,8 +266,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate: AppConfig.osmTileUrl,
                           userAgentPackageName: 'com.washly.admin',
                           maxZoom: 19,
                         ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/providers/bookings_provider.dart';
@@ -30,7 +31,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   String _source = 'whatsapp';
   String _serviceType = 'exteriorOnly';
   String? _selectedColor;
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: AppConfig.minBookingDaysAhead));
   String _selectedSlot = '08:00';
   bool _loading = false;
   double _pickedLat = 0;
@@ -86,7 +87,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      lastDate: DateTime.now().add(const Duration(days: AppConfig.maxBookingDaysAhead)),
     );
     if (picked != null) setState(() => _selectedDate = picked);
   }
@@ -276,7 +277,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 Expanded(
                   child: _ServiceCard(
                     title: l10n.serviceTypeName(ServiceType.exteriorOnly),
-                    price: '195 EGP',
+                    price: '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
                     selected: _serviceType == 'exteriorOnly',
                     onTap: () => setState(() => _serviceType = 'exteriorOnly'),
                   ),
@@ -285,7 +286,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 Expanded(
                   child: _ServiceCard(
                     title: l10n.serviceTypeName(ServiceType.interiorOnly),
-                    price: '220 EGP',
+                    price: '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
                     selected: _serviceType == 'interiorOnly',
                     onTap: () => setState(() => _serviceType = 'interiorOnly'),
                   ),
@@ -294,7 +295,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               const SizedBox(height: 10),
               _ServiceCard(
                 title: l10n.serviceTypeName(ServiceType.fullService),
-                price: '250 EGP',
+                price: '${AppConfig.priceFullService} ${AppConfig.currency}',
                 selected: _serviceType == 'fullService',
                 onTap: () => setState(() => _serviceType = 'fullService'),
               ),

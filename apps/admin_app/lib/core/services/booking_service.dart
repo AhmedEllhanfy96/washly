@@ -7,6 +7,7 @@ import '../models/booking.dart';
 import '../models/team_member.dart';
 import '../models/worker.dart';
 import '../services/ws_service.dart';
+import '../config/app_config.dart';
 import 'api_client.dart';
 
 final adminBookingServiceProvider = Provider<AdminBookingService>((ref) {
@@ -39,7 +40,7 @@ class AdminBookingService {
     }
 
     fetch();
-    final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetch());
+    final timer = Timer.periodic(AppConfig.bookingPollInterval, (_) => fetch());
     final wsSub = _ws.events.listen((_) => fetch());
 
     controller.onCancel = () {
@@ -75,7 +76,7 @@ class AdminBookingService {
     }
 
     fetch();
-    final timer = Timer.periodic(const Duration(seconds: 60), (_) => fetch());
+    final timer = Timer.periodic(AppConfig.teamPollInterval, (_) => fetch());
     controller.onCancel = () => timer.cancel();
 
     return controller.stream;

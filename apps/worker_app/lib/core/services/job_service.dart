@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/job.dart';
+import '../config/app_config.dart';
 import 'api_client.dart';
 
 final jobServiceProvider = Provider<JobService>((ref) => JobService());
@@ -28,8 +29,7 @@ class JobService {
     }
 
     fetch();
-    // Poll every 30s for new assignments
-    final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetch());
+    final timer = Timer.periodic(AppConfig.jobPollInterval, (_) => fetch());
     controller.onCancel = () => timer.cancel();
 
     return controller.stream;

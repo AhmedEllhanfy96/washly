@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking.dart';
 import '../models/time_slot.dart';
 import '../services/ws_service.dart';
+import '../config/app_config.dart';
 import 'api_client.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
@@ -46,8 +47,7 @@ class BookingService {
     }
 
     fetch();
-    // Periodic fallback every 30s
-    final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetch());
+    final timer = Timer.periodic(AppConfig.bookingPollInterval, (_) => fetch());
     // Instant update on WS event
     final wsSub = _ws.events.listen((_) => fetch());
 

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/models/worker.dart';
@@ -71,8 +72,7 @@ class BookingDetailScreen extends ConsumerWidget {
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate:
-                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                urlTemplate: AppConfig.osmTileUrl,
                                 userAgentPackageName: 'com.washly.admin',
                                 maxZoom: 19,
                               ),
@@ -508,7 +508,7 @@ class _PhoneRow extends StatelessWidget {
 
   Future<void> _whatsapp() {
     final digits = phone.replaceAll(RegExp(r'\D'), '');
-    return launchUrl(Uri.parse('https://wa.me/$digits'),
+    return launchUrl(Uri.parse('${AppConfig.whatsAppUrl}$digits'),
         mode: LaunchMode.externalApplication);
   }
 

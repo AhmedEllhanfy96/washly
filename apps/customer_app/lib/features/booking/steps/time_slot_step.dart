@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -15,7 +16,7 @@ class TimeSlotStep extends ConsumerStatefulWidget {
 }
 
 class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: AppConfig.minBookingDaysAhead));
   String? _selectedSlot;
 
   void _submit() {
@@ -54,10 +55,9 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                   height: 72,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: 14,
+                    itemCount: AppConfig.maxBookingDaysAhead,
                     itemBuilder: (_, i) {
-                      final day =
-                          DateTime.now().add(Duration(days: i + 1));
+                      final day = DateTime.now().add(Duration(days: i + AppConfig.minBookingDaysAhead));
                       final isSelected = _isSameDay(day, _selectedDate);
                       return GestureDetector(
                         onTap: () => setState(() {
@@ -65,7 +65,7 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                           _selectedSlot = null;
                         }),
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
+                          duration: AppConfig.animationNormal,
                           width: 56,
                           margin: const EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
@@ -132,7 +132,7 @@ class _TimeSlotStepState extends ConsumerState<TimeSlotStep> {
                           onTap: () => setState(
                               () => _selectedSlot = slot.startTime),
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
+                            duration: AppConfig.animationFast,
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
