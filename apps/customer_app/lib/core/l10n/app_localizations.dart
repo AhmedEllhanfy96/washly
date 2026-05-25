@@ -59,8 +59,6 @@ class AppLocalizations {
   String get phoneTooShort => _ar ? 'رقم الهاتف يجب أن يكون 11 رقماً على الأقل' : 'Phone must be at least 11 digits';
   String get changePassword => _ar ? 'تغيير كلمة المرور' : 'Change Password';
   String get currentPassword => _ar ? 'كلمة المرور الحالية' : 'Current Password';
-  String get newPassword => _ar ? 'كلمة المرور الجديدة' : 'New Password';
-  String get confirmNewPassword => _ar ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password';
   String get passwordsDoNotMatch => _ar ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match';
   String get profileUpdated => _ar ? 'تم تحديث الملف الشخصي بنجاح' : 'Profile updated successfully';
   String get saveChanges => _ar ? 'حفظ التغييرات' : 'Save Changes';
@@ -77,6 +75,11 @@ class AppLocalizations {
   String get insideOutside => _ar ? 'داخلي + خارجي' : 'Inside + Outside';
   String get interiorOnlyShort => _ar ? 'داخلي\nفقط' : 'Interior\nOnly';
   String get deepClean => _ar ? 'تنظيف عميق' : 'Deep clean';
+  String get ourServices => _ar ? 'خدماتنا' : 'Our Services';
+  String get whyWashly => _ar ? 'لماذا واشلي؟' : 'Why Washly?';
+  String get featureProfessional => _ar ? 'احترافية\nمضمونة' : 'Professional\nGuaranteed';
+  String get featureFast => _ar ? 'سريع\nوفعّال' : 'Fast &\nEfficient';
+  String get featureEco => _ar ? 'صديق\nللبيئة' : 'Eco-\nFriendly';
   String get recentBookings => _ar ? 'الحجوزات الأخيرة' : 'Recent Bookings';
   String get noBookingsYet => _ar ? 'لا توجد حجوزات بعد' : 'No bookings yet';
   String get viewAllBookings => _ar ? 'عرض كل الحجوزات' : 'View all bookings';

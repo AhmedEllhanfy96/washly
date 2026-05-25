@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,16 @@ import '../../core/providers/booking_provider.dart';
 import '../../shared/widgets/booking_status_card.dart';
 import '../../shared/widgets/language_toggle_button.dart';
 
+// Unsplash free photos — replace with owned images for production
+const _heroImg =
+    'https://images.unsplash.com/photo-1520340596035-7f3b89e01f63?w=900&q=80&fit=crop';
+const _exteriorImg =
+    'https://images.unsplash.com/photo-1616421016789-5a1e8f9bc0f5?w=400&q=80&fit=crop';
+const _interiorImg =
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=80&fit=crop';
+const _fullImg =
+    'https://images.unsplash.com/photo-1614602849278-7c9c29f55b2e?w=400&q=80&fit=crop';
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -15,73 +26,106 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authProvider);
     final bookings = ref.watch(userBookingsProvider);
-    final theme = Theme.of(context);
     final l10n = context.l10n;
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(l10n.appTitle),
-        actions: [
-          const LanguageToggleButton(),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            tooltip: l10n.profile,
-            onPressed: () => context.go('/profile'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).signOut(),
-          ),
-        ],
-      ),
       body: CustomScrollView(
         slivers: [
-          // Hero section
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.primary.withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
+          // ── Collapsible hero app bar ─────────────────────────────────
+          SliverAppBar(
+            expandedHeight: 270,
+            pinned: true,
+            actions: [
+              IconTheme(
+                data: const IconThemeData(color: Colors.white),
+                child: const LanguageToggleButton(),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              IconButton(
+                icon: const Icon(Icons.person_outline, color: Colors.white),
+                tooltip: l10n.profile,
+                onPressed: () => context.go('/profile'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                onPressed: () => ref.read(authProvider.notifier).signOut(),
+              ),
+            ],
+            title: Text(l10n.appTitle,
+                style: const TextStyle(color: Colors.white)),
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
-                  profile.when(
-                    data: (p) => Text(
-                      l10n.helloName(p?.name.split(' ').first ?? ''),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold),
+                  // Hero photo
+                  CachedNetworkImage(
+                    imageUrl: _heroImg,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) =>
+                        const ColoredBox(color: Color(0xFF0D47A1)),
+                    errorWidget: (_, __, ___) =>
+                        const ColoredBox(color: Color(0xFF0D47A1)),
+                  ),
+                  // Gradient overlay
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xCC0D47A1),
+                          Color(0x991565C0),
+                          Color(0x6600ACC1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                    loading: () => Text(l10n.helloThere,
-                        style: const TextStyle(color: Colors.white, fontSize: 22)),
-                    error: (_, __) => const SizedBox(),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.bookCarWashDoorstep,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: () => context.go('/home/book'),
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: Text(l10n.bookAWash,
-                        style: const TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      side: const BorderSide(color: Colors.white54),
+                  // Greeting + CTA
+                  Positioned(
+                    left: 20,
+                    right: 20,
+                    bottom: 28,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        profile.when(
+                          data: (p) => Text(
+                            l10n.helloName(
+                                p?.name.split(' ').first ?? ''),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          loading: () => const SizedBox(),
+                          error: (_, __) => const SizedBox(),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.bookCarWashDoorstep,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 14),
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: () => context.go('/home/book'),
+                          icon: const Icon(Icons.water_drop),
+                          label: Text(l10n.bookAWash),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF0D47A1),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            textStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -89,52 +133,93 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // Service cards
+          // ── Our Services ────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+              child: Text(l10n.ourServices,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 170,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _ServiceCard(
+                    imageUrl: _exteriorImg,
+                    gradientColors: const [Color(0xFF1565C0), Color(0xFF00ACC1)],
+                    title: l10n.exteriorOnlyShort,
+                    price: '195 EGP',
+                    onTap: () => context.go('/home/book'),
+                  ),
+                  const SizedBox(width: 12),
+                  _ServiceCard(
+                    imageUrl: _interiorImg,
+                    gradientColors: const [Color(0xFF00695C), Color(0xFF4CAF50)],
+                    title: l10n.interiorOnlyShort,
+                    price: '220 EGP',
+                    onTap: () => context.go('/home/book'),
+                  ),
+                  const SizedBox(width: 12),
+                  _ServiceCard(
+                    imageUrl: _fullImg,
+                    gradientColors: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+                    title: l10n.fullServiceShort,
+                    price: '250 EGP',
+                    onTap: () => context.go('/home/book'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Why Washly ──────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+              child: Text(l10n.whyWashly,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Expanded(
-                    child: _ServiceCard(
-                      icon: Icons.car_crash_outlined,
-                      title: l10n.exteriorOnlyShort,
-                      subtitle: l10n.quickAndClean,
-                      color: Colors.blue,
-                      onTap: () => context.go('/home/book'),
-                    ),
+                  _FeatureTile(
+                    icon: Icons.verified_outlined,
+                    label: l10n.featureProfessional,
+                    color: Colors.blue,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ServiceCard(
-                      icon: Icons.airline_seat_recline_extra_outlined,
-                      title: l10n.interiorOnlyShort,
-                      subtitle: l10n.deepClean,
-                      color: Colors.teal,
-                      onTap: () => context.go('/home/book'),
-                    ),
+                  const SizedBox(width: 10),
+                  _FeatureTile(
+                    icon: Icons.bolt_outlined,
+                    label: l10n.featureFast,
+                    color: Colors.orange,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ServiceCard(
-                      icon: Icons.cleaning_services,
-                      title: l10n.fullServiceShort,
-                      subtitle: l10n.insideOutside,
-                      color: Colors.purple,
-                      onTap: () => context.go('/home/book'),
-                    ),
+                  const SizedBox(width: 10),
+                  _FeatureTile(
+                    icon: Icons.eco_outlined,
+                    label: l10n.featureEco,
+                    color: Colors.green,
                   ),
                 ],
               ),
             ),
           ),
 
-          // Recent bookings header
+          // ── Recent Bookings ─────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 28, 16, 8),
               child: Text(l10n.recentBookings,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
             ),
           ),
 
@@ -143,14 +228,27 @@ class HomeScreen extends ConsumerWidget {
               if (list.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.car_rental, size: 64, color: Colors.grey),
-                        const SizedBox(height: 12),
-                        Text(l10n.noBookingsYet,
-                            style: const TextStyle(color: Colors.grey)),
-                      ],
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 24),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          children: [
+                            Icon(Icons.water_drop_outlined,
+                                size: 56, color: Colors.blue[200]),
+                            const SizedBox(height: 12),
+                            Text(l10n.noBookingsYet,
+                                style:
+                                    const TextStyle(color: Colors.grey)),
+                            const SizedBox(height: 16),
+                            FilledButton(
+                              onPressed: () => context.go('/home/book'),
+                              child: Text(l10n.bookAWash),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 );
@@ -158,7 +256,10 @@ class HomeScreen extends ConsumerWidget {
               final recent = list.take(3).toList();
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (_, i) => BookingStatusCard(booking: recent[i]),
+                  (_, i) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: BookingStatusCard(booking: recent[i]),
+                  ),
                   childCount: recent.length,
                 ),
               );
@@ -173,63 +274,156 @@ class HomeScreen extends ConsumerWidget {
 
           if (bookings.valueOrNull?.isNotEmpty == true)
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextButton(
-                  onPressed: () => context.go('/history'),
-                  child: Text(l10n.viewAllBookings),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: TextButton(
+                    onPressed: () => context.go('/history'),
+                    child: Text(l10n.viewAllBookings),
+                  ),
                 ),
               ),
             ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
     );
   }
 }
 
+// ── Service card (horizontal scroll) ────────────────────────────────────────
+
 class _ServiceCard extends StatelessWidget {
-  final IconData icon;
+  final String imageUrl;
+  final List<Color> gradientColors;
   final String title;
-  final String subtitle;
-  final Color color;
+  final String price;
   final VoidCallback onTap;
 
   const _ServiceCard({
-    required this.icon,
+    required this.imageUrl,
+    required this.gradientColors,
     required this.title,
-    required this.subtitle,
-    required this.color,
+    required this.price,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: 160,
+          height: 170,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+              ),
+              // Gradient overlay from bottom
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      gradientColors.last.withOpacity(0.75),
+                      gradientColors.first.withOpacity(0.95),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.3, 0.7, 1.0],
+                  ),
+                ),
+              ),
+              // Text
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(price,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Feature tile ─────────────────────────────────────────────────────────────
+
+class _FeatureTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _FeatureTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 22),
               ),
               const SizedBox(height: 8),
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 13)),
-              const SizedBox(height: 2),
-              Text(subtitle,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+              Text(label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700])),
             ],
           ),
         ),
