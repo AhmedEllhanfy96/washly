@@ -97,7 +97,23 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   Future<void> _goToMyLocation() async {
     setState(() => _locating = true);
     try {
-      if (!kIsWeb) {
+      if (kIsWeb) {
+        final base = Uri.base;
+        final isHttp = base.scheme == 'http' &&
+            base.host != 'localhost' &&
+            base.host != '127.0.0.1';
+        if (isHttp) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.l10n.locationRequiresHttps),
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+          return;
+        }
+      } else {
         final serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
           if (mounted) {

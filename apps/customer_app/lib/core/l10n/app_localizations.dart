@@ -146,8 +146,8 @@ class AppLocalizations {
       ? 'أتح الموقع في المتصفح، أو حرّك دبوس الخريطة يدوياً.'
       : 'Allow location in your browser, or drag the map pin manually.';
   String get locationRequiresHttps => _ar
-      ? 'تحديد الموقع يتطلب HTTPS. اسحب دبوس الخريطة يدوياً.'
-      : 'Location requires HTTPS. Drag the pin manually.';
+      ? 'المتصفح يمنع تحديد الموقع على HTTP. اسحب الدبوس يدوياً أو استخدم تطبيق الموبايل.'
+      : 'Browser blocks location on HTTP. Drag the pin manually or use the mobile app.';
   String get couldNotGetGps =>
       _ar ? 'تعذر الحصول على الموقع. حرّك الدبوس يدوياً.' : 'Could not get GPS. Drag the pin manually.';
 
