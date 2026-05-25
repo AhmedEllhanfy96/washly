@@ -97,21 +97,7 @@ class _LocationStepState extends ConsumerState<LocationStep> {
   Future<void> _goToMyLocation() async {
     setState(() => _locating = true);
     try {
-      if (kIsWeb) {
-        // Chrome blocks geolocation on HTTP (non-localhost)
-        final base = Uri.base;
-        final secure = base.scheme == 'https' ||
-            base.host == 'localhost' ||
-            base.host == '127.0.0.1';
-        if (!secure) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.locationRequiresHttps)),
-            );
-          }
-          return;
-        }
-      } else {
+      if (!kIsWeb) {
         final serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
           if (mounted) {
