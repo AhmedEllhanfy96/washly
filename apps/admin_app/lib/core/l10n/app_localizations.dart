@@ -30,10 +30,17 @@ class AppLocalizations {
   String get pendingLabel => _ar ? 'انتظار' : 'Pending';
   String get confirmedLabel => _ar ? 'مؤكدة' : 'Confirmed';
   String get todayLabel => _ar ? 'اليوم' : 'Today';
+  String get inProgressLabel => _ar ? 'جارٍ التنفيذ' : 'In Progress';
+  String get completedTodayLabel => _ar ? 'مكتمل اليوم' : 'Done Today';
   String get pendingApprovals => _ar ? 'طلبات قيد الموافقة' : 'Pending Approvals';
   String get viewAll => _ar ? 'عرض الكل' : 'View all';
   String get noPendingBookings =>
       _ar ? 'لا توجد حجوزات قيد الانتظار' : 'No pending bookings';
+  String get todaySchedule => _ar ? 'جدول اليوم' : "Today's Schedule";
+  String get noScheduleToday =>
+      _ar ? 'لا توجد مواعيد مؤكدة لهذا اليوم' : 'No confirmed bookings for today';
+  String get unassigned => _ar ? 'غير مسند' : 'Unassigned';
+  String get waitingLabel => _ar ? 'انتظر' : 'waiting';
 
   // Booking list
   String get allBookings => _ar ? 'كل الحجوزات' : 'All Bookings';
