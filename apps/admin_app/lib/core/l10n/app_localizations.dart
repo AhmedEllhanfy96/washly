@@ -65,6 +65,7 @@ class AppLocalizations {
   String get slot => _ar ? 'الموعد' : 'Slot';
   String get assignedTo => _ar ? 'مسند إلى' : 'Assigned to';
   String get actions => _ar ? 'إجراءات' : 'Actions';
+  String get logout => _ar ? 'تسجيل الخروج' : 'Log out';
   String get couldNotLoadWorkers =>
       _ar ? 'تعذر تحميل العمال' : 'Could not load workers';
   String get rejectBooking => _ar ? 'رفض الحجز' : 'Reject Booking';

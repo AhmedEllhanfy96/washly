@@ -12,6 +12,7 @@ import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
 import '../../core/models/worker.dart';
 import '../../core/providers/bookings_provider.dart';
+import '../../core/providers/wallet_provider.dart';
 import '../../core/services/booking_service.dart';
 import '../../shared/widgets/status_badge.dart';
 
@@ -192,11 +193,38 @@ class BookingDetailScreen extends ConsumerWidget {
                           _Row(l10n.assignedTo, booking.assignedTo!),
                       ],
                     ),
+                    const SizedBox(height: 12),
+
+                    // Payment info (always visible)
+                    _Section(
+                      title: 'Payment',
+                      icon: Icons.payments_outlined,
+                      children: [
+                        _Row('Method', switch (booking.paymentMethod) {
+                          'instapay'    => 'InstaPay',
+                          'credit_card' => 'Credit Card',
+                          _             => 'Pay on Arrival (Cash)',
+                        }),
+                        _Row('Status', booking.paymentMethod == 'cash'
+                            ? 'Worker collects cash on arrival'
+                            : (booking.paymentStatus == 'confirmed'
+                                ? '✓ Received by company'
+                                : '⏳ Not yet confirmed')),
+                      ],
+                    ),
                     const SizedBox(height: 20),
 
                     _CopyMessageButton(
                         booking: booking, lat: lat, lng: lng),
                     const SizedBox(height: 20),
+
+                    // Show InstaPay confirm even on confirmed bookings if not yet confirmed
+                    if (booking.status == BookingStatus.confirmed &&
+                        booking.paymentMethod == 'instapay' &&
+                        booking.paymentStatus != 'confirmed') ...[
+                      _PaymentActionCard(booking: booking),
+                      const SizedBox(height: 16),
+                    ],
 
                     if (booking.status == BookingStatus.pending) ...[
                       Align(
@@ -207,6 +235,18 @@ class BookingDetailScreen extends ConsumerWidget {
                                 fontSize: 16)),
                       ),
                       const SizedBox(height: 12),
+
+                      // ── Step 1: Payment ──────────────────────────────────
+                      _PaymentActionCard(booking: booking),
+                      const SizedBox(height: 16),
+
+                      // ── Step 2: Assign worker ────────────────────────────
+                      Text('Step 2 — Assign Worker',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                              fontSize: 13)),
+                      const SizedBox(height: 8),
                       workers.when(
                         data: (list) => _AssignSection(
                           booking: booking,
@@ -544,6 +584,216 @@ class _PhoneRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PaymentActionCard extends ConsumerStatefulWidget {
+  final AdminBooking booking;
+  const _PaymentActionCard({required this.booking});
+
+  @override
+  ConsumerState<_PaymentActionCard> createState() => _PaymentActionCardState();
+}
+
+class _PaymentActionCardState extends ConsumerState<_PaymentActionCard> {
+  bool _loading = false;
+
+  Future<void> _confirm() async {
+    setState(() => _loading = true);
+    try {
+      await ref
+          .read(adminBookingServiceProvider)
+          .confirmPayment(widget.booking.id);
+      ref.invalidate(companyWalletProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('InstaPay payment confirmed ✓'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to confirm payment'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _switchToCash() async {
+    setState(() => _loading = true);
+    try {
+      await ref
+          .read(adminBookingServiceProvider)
+          .changePaymentMethod(widget.booking.id, 'cash');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Payment switched to Cash — worker will collect on arrival'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to update payment method'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.booking;
+    final isInstapay = b.paymentMethod == 'instapay';
+    final isCreditCard = b.paymentMethod == 'credit_card';
+    final needsConfirm = isInstapay || isCreditCard;
+    final isConfirmed = b.paymentStatus == 'confirmed';
+
+    final stepHeader = Text(
+      'Step 1 — Payment',
+      style: TextStyle(
+          fontWeight: FontWeight.w600, color: Colors.grey[700], fontSize: 13),
+    );
+
+    if (!needsConfirm) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          stepHeader,
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.green[200]!),
+            ),
+            child: Row(children: [
+              Icon(Icons.payments_outlined, color: Colors.green[700], size: 20),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Cash — worker collects on arrival. No action needed.',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      );
+    }
+
+    if (isConfirmed) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          stepHeader,
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.green[200]!),
+            ),
+            child: Row(children: [
+              Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'InstaPay confirmed — company received the money.',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      );
+    }
+
+    // InstaPay / Credit Card — not yet confirmed
+    final methodLabel = isCreditCard ? 'Credit Card' : 'InstaPay';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        stepHeader,
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.amber[50],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.amber[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Icon(Icons.warning_amber, color: Colors.amber[800], size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  '$methodLabel — not yet confirmed',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.amber[900],
+                      fontSize: 13),
+                ),
+              ]),
+              const SizedBox(height: 6),
+              Text(
+                'Did you receive the $methodLabel payment? Confirm before assigning to a worker.',
+                style: const TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 10),
+              if (_loading)
+                const Center(child: SizedBox(
+                    height: 20, width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2)))
+              else
+                Row(children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _confirm,
+                      icon: const Icon(Icons.verified_outlined, size: 16),
+                      label: const Text('Confirm Received',
+                          style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _switchToCash,
+                      icon: const Icon(Icons.payments_outlined, size: 16),
+                      label: const Text('Switch to Cash',
+                          style: TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.green[700],
+                        side: BorderSide(color: Colors.green[400]!),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ]),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

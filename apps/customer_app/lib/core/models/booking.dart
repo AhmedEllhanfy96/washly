@@ -2,6 +2,19 @@ import 'car.dart';
 
 enum ServiceType { exteriorOnly, interiorOnly, fullService }
 
+enum PaymentMethod {
+  cash,
+  instapay;
+
+  String get label => switch (this) {
+        cash => 'Pay on Arrival',
+        instapay => 'InstaPay',
+      };
+
+  static PaymentMethod fromString(String v) =>
+      PaymentMethod.values.firstWhere((e) => e.name == v, orElse: () => PaymentMethod.cash);
+}
+
 enum BookingStatus {
   pending,
   confirmed,
@@ -59,6 +72,8 @@ class Booking {
   final BookingStatus status;
   final String? assignedTo;
   final String? notes;
+  final PaymentMethod paymentMethod;
+  final String paymentStatus;
   final DateTime createdAt;
 
   const Booking({
@@ -72,6 +87,8 @@ class Booking {
     required this.status,
     this.assignedTo,
     this.notes,
+    this.paymentMethod = PaymentMethod.cash,
+    this.paymentStatus = 'pending',
     required this.createdAt,
   });
 
@@ -90,6 +107,8 @@ class Booking {
         status: BookingStatus.fromString(json['status'] as String? ?? 'pending'),
         assignedTo: json['assignedTo'] as String?,
         notes: json['notes'] as String?,
+        paymentMethod: PaymentMethod.fromString(json['paymentMethod'] as String? ?? 'cash'),
+        paymentStatus: json['paymentStatus'] as String? ?? 'pending',
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
@@ -107,6 +126,7 @@ class Booking {
         'longitude': location.longitude,
         'scheduledAt': scheduledAt.toIso8601String(),
         'timeSlot': timeSlot,
+        'paymentMethod': paymentMethod.name,
       };
 
   Booking copyWith({BookingStatus? status, String? assignedTo}) => Booking(

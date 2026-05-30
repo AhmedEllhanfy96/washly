@@ -118,8 +118,23 @@ class _BookingList extends StatelessWidget {
         ],
       ),
     );
-    if (confirm == true) {
+    if (confirm != true) return;
+    try {
       await ref.read(bookingServiceProvider).cancelBooking(booking.id);
+      ref.invalidate(userBookingsProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.bookingCancelledSuccess),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.couldNotCancelBooking),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 

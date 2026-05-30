@@ -37,6 +37,8 @@ class AdminBooking {
   final String? assignedTo;
   final String? notes;
   final String source;
+  final String paymentMethod;
+  final String paymentStatus;
   final DateTime createdAt;
   final String address;
 
@@ -56,6 +58,8 @@ class AdminBooking {
     this.assignedTo,
     this.notes,
     this.source = 'app',
+    this.paymentMethod = 'cash',
+    this.paymentStatus = 'pending',
     required this.createdAt,
   });
 
@@ -75,6 +79,8 @@ class AdminBooking {
         assignedTo: json['assignedTo'] as String?,
         notes: json['notes'] as String?,
         source: json['source'] as String? ?? 'app',
+        paymentMethod: json['paymentMethod'] as String? ?? 'cash',
+        paymentStatus: json['paymentStatus'] as String? ?? 'pending',
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 

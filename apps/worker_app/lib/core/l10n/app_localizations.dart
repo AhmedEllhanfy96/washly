@@ -25,6 +25,9 @@ class AppLocalizations {
   String get tooShort => _ar ? 'قصيرة جداً' : 'Too short';
   String get signIn => _ar ? 'تسجيل الدخول' : 'Sign In';
 
+  // Navigation
+  String get wallet => _ar ? 'المحفظة' : 'Wallet';
+
   // Jobs screen
   String get myJobs => _ar ? 'مهامي' : 'My Jobs';
   String get noPendingJobs => _ar ? 'لا توجد مهام معلقة' : 'No pending jobs';

@@ -26,6 +26,7 @@ class BookingFlowState {
   final BookingLocation? location;
   final DateTime? selectedDate;
   final String? selectedTimeSlot;
+  final PaymentMethod paymentMethod;
 
   const BookingFlowState({
     this.car,
@@ -33,6 +34,7 @@ class BookingFlowState {
     this.location,
     this.selectedDate,
     this.selectedTimeSlot,
+    this.paymentMethod = PaymentMethod.cash,
   });
 
   bool get isComplete =>
@@ -48,6 +50,7 @@ class BookingFlowState {
     BookingLocation? location,
     DateTime? selectedDate,
     String? selectedTimeSlot,
+    PaymentMethod? paymentMethod,
   }) =>
       BookingFlowState(
         car: car ?? this.car,
@@ -55,6 +58,7 @@ class BookingFlowState {
         location: location ?? this.location,
         selectedDate: selectedDate ?? this.selectedDate,
         selectedTimeSlot: selectedTimeSlot ?? this.selectedTimeSlot,
+        paymentMethod: paymentMethod ?? this.paymentMethod,
       );
 }
 
@@ -66,6 +70,7 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
   void setLocation(BookingLocation location) => state = state.copyWith(location: location);
   void setSchedule(DateTime date, String slot) =>
       state = state.copyWith(selectedDate: date, selectedTimeSlot: slot);
+  void setPaymentMethod(PaymentMethod method) => state = state.copyWith(paymentMethod: method);
   void reset() => state = const BookingFlowState();
 }
 

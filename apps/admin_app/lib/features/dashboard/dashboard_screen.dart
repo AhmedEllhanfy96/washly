@@ -3,14 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/models/booking.dart';
-import '../../core/models/team_member.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/bookings_provider.dart';
 import '../../shared/widgets/language_toggle_button.dart';
-import '../../shared/widgets/status_badge.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -18,7 +15,6 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allAsync = ref.watch(allBookingsProvider);
-    final teamAsync = ref.watch(teamMembersProvider);
     final l10n = context.l10n;
 
     return Scaffold(
@@ -26,31 +22,6 @@ class DashboardScreen extends ConsumerWidget {
         title: Text(l10n.appTitle),
         actions: [
           const LanguageToggleButton(),
-          IconButton(
-            icon: const Icon(Icons.people_alt_outlined),
-            tooltip: l10n.customers,
-            onPressed: () => context.go('/dashboard/customers'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.calendar_month_outlined),
-            tooltip: l10n.scheduleManagement,
-            onPressed: () => context.go('/dashboard/schedule'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.group),
-            tooltip: l10n.workers,
-            onPressed: () => context.go('/dashboard/team'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            tooltip: l10n.allBookings,
-            onPressed: () => context.go('/dashboard/bookings'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.attach_money),
-            tooltip: 'Pricing',
-            onPressed: () => context.go('/dashboard/pricing'),
-          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(adminAuthProvider.notifier).signOut(),
@@ -70,171 +41,150 @@ class DashboardScreen extends ConsumerWidget {
               .where((b) => b.status == BookingStatus.pending)
               .toList()
             ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          final confirmed =
-              bookings.where((b) => b.status == BookingStatus.confirmed).length;
-          final inProgress =
-              bookings.where((b) => b.status == BookingStatus.inProgress).toList();
-          final completedToday = bookings
+          final confirmed = bookings
+              .where((b) => b.status == BookingStatus.confirmed)
+              .length;
+          final inProgress = bookings
+              .where((b) => b.status == BookingStatus.inProgress)
+              .length;
+          final doneToday = bookings
               .where((b) =>
                   b.status == BookingStatus.completed && isToday(b.scheduledAt))
-              .toList();
-          final todaySchedule = bookings
-              .where((b) =>
-                  isToday(b.scheduledAt) &&
-                  (b.status == BookingStatus.confirmed ||
-                      b.status == BookingStatus.inProgress))
-              .toList()
-            ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-
-          // Oldest pending waiting time
-          String? oldestWait;
-          if (pending.isNotEmpty) {
-            final diff = now.difference(pending.first.createdAt);
-            if (diff.inMinutes < 60) {
-              oldestWait = '${diff.inMinutes}m';
-            } else if (diff.inHours < 24) {
-              oldestWait = '${diff.inHours}h';
-            } else {
-              oldestWait = '${diff.inDays}d';
-            }
-          }
-
-          // Revenue for completed today
-          int revenue = 0;
-          for (final b in completedToday) {
-            revenue += switch (b.serviceType) {
-              ServiceType.exteriorOnly => AppConfig.priceExteriorOnly,
-              ServiceType.interiorOnly => AppConfig.priceInteriorOnly,
-              ServiceType.fullService => AppConfig.priceFullService,
-            };
-          }
-
-          final workers = teamAsync.valueOrNull ?? <TeamMember>[];
-          String workerName(String? id) {
-            if (id == null) return l10n.unassigned;
-            try {
-              return workers.firstWhere((w) => w.id == id).name;
-            } catch (_) {
-              return l10n.unassigned;
-            }
-          }
+              .length;
 
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(allBookingsProvider),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
               children: [
-                // ── Stats 2×2 grid ───────────────────────────────────────
+                // ── Date ─────────────────────────────────────────────────
+                Text(
+                  DateFormat('EEEE, d MMM').format(now),
+                  style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 10),
+
+                // ── Stats row (compact) ───────────────────────────────────
+                Row(
+                  children: [
+                    _Stat(pending.length, l10n.pendingLabel, Colors.orange,
+                        urgent: pending.isNotEmpty),
+                    _Stat(confirmed, l10n.confirmedLabel, Colors.blue),
+                    _Stat(inProgress, l10n.inProgressLabel, Colors.deepPurple),
+                    _Stat(doneToday, l10n.completedTodayLabel, Colors.green),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // ── Action tiles (3-col) ──────────────────────────────────
                 GridView.count(
-                  crossAxisCount: 2,
+                  crossAxisCount: 3,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.6,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1.15,
                   children: [
-                    _StatCard(
-                      label: l10n.pendingLabel,
-                      value: '${pending.length}',
-                      color: Colors.orange,
-                      icon: Icons.hourglass_empty,
-                      subtitle: oldestWait != null
-                          ? '${l10n.waitingLabel} $oldestWait'
-                          : null,
-                      onTap: () => context.go('/dashboard/bookings'),
-                    ),
-                    _StatCard(
-                      label: l10n.confirmedLabel,
-                      value: '$confirmed',
+                    _Tile(
+                      icon: Icons.list_alt,
+                      label: l10n.allBookings,
                       color: Colors.blue,
-                      icon: Icons.check_circle_outline,
-                      subtitle: '${todaySchedule.where((b) => b.status == BookingStatus.confirmed).length} ${l10n.todayLabel}',
+                      badge: pending.isNotEmpty ? pending.length : null,
                       onTap: () => context.go('/dashboard/bookings'),
                     ),
-                    _StatCard(
-                      label: l10n.inProgressLabel,
-                      value: '${inProgress.length}',
+                    _Tile(
+                      icon: Icons.group,
+                      label: l10n.workers,
+                      color: Colors.teal,
+                      onTap: () => context.go('/dashboard/team'),
+                    ),
+                    _Tile(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Wallets',
+                      color: Colors.orange[700]!,
+                      onTap: () => context.go('/dashboard/wallet'),
+                    ),
+                    _Tile(
+                      icon: Icons.settings,
+                      label: 'Settings',
+                      color: Colors.grey[600]!,
+                      onTap: () => context.go('/dashboard/pricing'),
+                    ),
+                    _Tile(
+                      icon: Icons.people_alt_outlined,
+                      label: l10n.customers,
+                      color: Colors.indigo,
+                      onTap: () => context.go('/dashboard/customers'),
+                    ),
+                    _Tile(
+                      icon: Icons.calendar_month_outlined,
+                      label: 'Schedule',
                       color: Colors.deepPurple,
-                      icon: Icons.local_car_wash,
-                      onTap: () => context.go('/dashboard/bookings'),
-                    ),
-                    _StatCard(
-                      label: l10n.completedTodayLabel,
-                      value: '${completedToday.length}',
-                      color: Colors.green,
-                      icon: Icons.check_circle,
-                      subtitle: revenue > 0 ? '$revenue EGP' : null,
-                      onTap: () => context.go('/dashboard/bookings'),
+                      onTap: () => context.go('/dashboard/schedule'),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 24),
-
-                // ── Today's Schedule ─────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(l10n.todaySchedule,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(DateFormat('EEE, d MMM').format(now),
-                        style:
-                            TextStyle(color: Colors.grey[600], fontSize: 13)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (todaySchedule.isEmpty)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 28),
-                      child: Column(
-                        children: [
-                          Icon(Icons.event_available,
-                              color: Colors.green[300], size: 36),
-                          const SizedBox(height: 8),
-                          Text(l10n.noScheduleToday,
-                              style: TextStyle(color: Colors.grey[600])),
-                        ],
+                // ── Pending ───────────────────────────────────────────────
+                if (pending.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(children: [
+                        Container(
+                            width: 7, height: 7,
+                            decoration: const BoxDecoration(
+                                color: Colors.orange,
+                                shape: BoxShape.circle)),
+                        const SizedBox(width: 7),
+                        Text(l10n.pendingApprovals,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Text('${pending.length}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ]),
+                      TextButton(
+                        onPressed: () => context.go('/dashboard/bookings'),
+                        style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                        child: Text(l10n.viewAll,
+                            style: const TextStyle(fontSize: 12)),
                       ),
-                    ),
-                  )
-                else
-                  ...todaySchedule.map((b) => _TodayBookingCard(
-                        booking: b,
-                        workerName: workerName(b.assignedTo),
-                      )),
-
-                const SizedBox(height: 24),
-
-                // ── Pending Approvals ────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(l10n.pendingApprovals,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    TextButton(
-                      onPressed: () => context.go('/dashboard/bookings'),
-                      child: Text(l10n.viewAll),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (pending.isEmpty)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Center(
-                        child: Text(l10n.noPendingBookings,
-                            style: const TextStyle(color: Colors.grey)),
-                      ),
-                    ),
-                  )
-                else
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   ...pending
-                      .take(AppConfig.dashboardPendingLimit)
-                      .map((b) => _PendingBookingCard(booking: b, now: now)),
+                      .take(4)
+                      .map((b) => _PendingRow(booking: b, now: now)),
+                  if (pending.length > 4)
+                    Center(
+                      child: TextButton(
+                        onPressed: () => context.go('/dashboard/bookings'),
+                        child: Text(
+                            '${pending.length - 4} more…',
+                            style: const TextStyle(
+                                color: Colors.orange, fontSize: 12)),
+                      ),
+                    ),
+                ],
               ],
             ),
           );
@@ -244,273 +194,182 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-// ── Stat card ────────────────────────────────────────────────────────────────
+// ── Compact stat ──────────────────────────────────────────────────────────────
 
-class _StatCard extends StatelessWidget {
+class _Stat extends StatelessWidget {
+  final int n;
   final String label;
-  final String value;
   final Color color;
-  final IconData icon;
-  final String? subtitle;
-  final VoidCallback? onTap;
+  final bool urgent;
 
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.color,
+  const _Stat(this.n, this.label, this.color, {this.urgent = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            '$n',
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: urgent && n > 0 ? Colors.orange : color),
+          ),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 9, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Action tile ───────────────────────────────────────────────────────────────
+
+class _Tile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  final int? badge;
+
+  const _Tile({
     required this.icon,
-    this.subtitle,
-    this.onTap,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
+      color: color.withOpacity(0.07),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: color.withOpacity(0.18)),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 22),
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: color, size: 22),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800]),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(value,
-                        style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                            height: 1.1)),
-                    Text(label,
-                        style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500)),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(subtitle!,
-                          style: TextStyle(
-                              color: color.withOpacity(0.8),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600)),
-                    ],
-                  ],
+            ),
+            if (badge != null)
+              Positioned(
+                top: 5,
+                right: 5,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                      color: Colors.red, shape: BoxShape.circle),
+                  child: Center(
+                    child: Text('$badge',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ── Today's schedule card ────────────────────────────────────────────────────
+// ── Pending row ───────────────────────────────────────────────────────────────
 
-class _TodayBookingCard extends StatelessWidget {
-  final AdminBooking booking;
-  final String workerName;
-
-  const _TodayBookingCard({required this.booking, required this.workerName});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final isInProgress = booking.status == BookingStatus.inProgress;
-    final timeColor =
-        isInProgress ? Colors.deepPurple : Colors.blue;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isInProgress
-            ? const BorderSide(color: Colors.deepPurple, width: 1.5)
-            : BorderSide.none,
-      ),
-      child: InkWell(
-        onTap: () => context.go('/dashboard/bookings/${booking.id}'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Time column
-              Container(
-                width: 64,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  color: timeColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      booking.timeSlot.split('–').first.trim(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: timeColor),
-                    ),
-                    if (isInProgress)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Icon(Icons.local_car_wash,
-                            size: 14, color: Colors.deepPurple),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(booking.customerName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 14)),
-                        ),
-                        StatusBadge(status: booking.status),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    _Row(Icons.directions_car, booking.carSummary),
-                    _Row(Icons.cleaning_services,
-                        l10n.serviceTypeName(booking.serviceType)),
-                    _Row(
-                      booking.assignedTo != null
-                          ? Icons.person
-                          : Icons.person_outline,
-                      workerName,
-                      color: booking.assignedTo != null
-                          ? null
-                          : Colors.orange,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Pending booking card ─────────────────────────────────────────────────────
-
-class _PendingBookingCard extends StatelessWidget {
+class _PendingRow extends StatelessWidget {
   final AdminBooking booking;
   final DateTime now;
 
-  const _PendingBookingCard({required this.booking, required this.now});
+  const _PendingRow({required this.booking, required this.now});
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('EEE, MMM d • h:mm a');
     final l10n = context.l10n;
     final diff = now.difference(booking.createdAt);
-    final waitStr = diff.inMinutes < 60
+    final wait = diff.inMinutes < 60
         ? '${diff.inMinutes}m'
         : diff.inHours < 24
             ? '${diff.inHours}h'
             : '${diff.inDays}d';
-    final waitColor =
-        diff.inHours >= AppConfig.pendingAlertHours ? Colors.red : Colors.orange;
+    final isOld = diff.inHours >= 1;
+    final needsPayment = booking.paymentMethod == 'instapay' &&
+        booking.paymentStatus != 'confirmed';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+            color: isOld
+                ? Colors.orange.withOpacity(0.35)
+                : Colors.grey[200]!),
+      ),
       child: InkWell(
         onTap: () => context.go('/dashboard/bookings/${booking.id}'),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(booking.customerName,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(booking.customerName,
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: waitColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${l10n.waitingLabel} $waitStr',
+                            fontWeight: FontWeight.w600, fontSize: 13)),
+                    Text(
+                      '${l10n.serviceTypeName(booking.serviceType)}  ·  ${booking.timeSlot}',
                       style: TextStyle(
-                          color: waitColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold),
+                          color: Colors.grey[500], fontSize: 11),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-              _Row(Icons.directions_car, booking.carSummary),
-              _Row(Icons.cleaning_services,
-                  l10n.serviceTypeName(booking.serviceType)),
-              _Row(Icons.location_on, booking.address),
-              _Row(Icons.calendar_today, fmt.format(booking.scheduledAt)),
+              if (needsPayment)
+                const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Icon(Icons.warning_amber,
+                      color: Colors.orange, size: 14),
+                ),
+              Text(wait,
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isOld ? Colors.orange[700] : Colors.grey[500])),
+              const SizedBox(width: 2),
+              const Icon(Icons.chevron_right, size: 14, color: Colors.grey),
             ],
           ),
         ),
       ),
     );
   }
-}
-
-// ── Shared row widget ────────────────────────────────────────────────────────
-
-class _Row extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color? color;
-
-  const _Row(this.icon, this.text, {this.color});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 3),
-        child: Row(
-          children: [
-            Icon(icon, size: 14, color: color ?? Colors.grey[500]),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(
-                    color: color ?? Colors.grey[700], fontSize: 13),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      );
 }

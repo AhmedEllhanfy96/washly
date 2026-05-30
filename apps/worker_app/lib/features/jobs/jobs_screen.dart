@@ -28,16 +28,20 @@ class JobsScreen extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.myJobs),
+            Text(l10n.myJobs,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
             if (profile != null)
               Text(profile.name,
-                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onPrimary.withOpacity(0.8))),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.55))),
           ],
         ),
         actions: [
           const LanguageToggleButton(),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_outlined),
+            tooltip: 'Sign out',
             onPressed: () => ref.read(workerAuthProvider.notifier).signOut(),
           ),
         ],

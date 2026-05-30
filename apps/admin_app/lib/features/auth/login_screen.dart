@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/language_toggle_button.dart';
+import '../../shared/widgets/washly_logo.dart';
 
 class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
@@ -77,37 +78,18 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   child: Column(
                     children: [
                       const SizedBox(height: 16),
-                      Container(
-                        width: 200,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                      const WashlyLogo(size: 90),
+                      const SizedBox(height: 10),
                       Text(
-                        l10n.appTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                        'Admin Panel',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 13,
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         l10n.signInToManage,
                         style: const TextStyle(color: Colors.white70, fontSize: 14),

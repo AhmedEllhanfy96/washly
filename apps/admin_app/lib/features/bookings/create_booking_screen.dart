@@ -30,6 +30,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
   String _source = 'whatsapp';
   String _serviceType = 'exteriorOnly';
+  String _paymentMethod = 'cash';
   String? _selectedColor;
   DateTime _selectedDate = DateTime.now().add(const Duration(days: AppConfig.minBookingDaysAhead));
   String _selectedSlot = '08:00';
@@ -114,6 +115,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               'year': _yearCtrl.text.trim().isEmpty ? null : _yearCtrl.text.trim(),
             },
             serviceType: _serviceType,
+            paymentMethod: _paymentMethod,
             address: _addressCtrl.text.trim(),
             latitude: _pickedLat,
             longitude: _pickedLng,
@@ -298,6 +300,49 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 price: '${AppConfig.priceFullService} ${AppConfig.currency}',
                 selected: _serviceType == 'fullService',
                 onTap: () => setState(() => _serviceType = 'fullService'),
+              ),
+
+              const SizedBox(height: 20),
+
+              _SectionHeader(icon: Icons.payments_outlined, label: 'Payment Method'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    avatar: Icon(Icons.payments_outlined, size: 16,
+                        color: _paymentMethod == 'cash' ? Colors.white : Colors.green),
+                    label: const Text('Cash on Arrival'),
+                    selected: _paymentMethod == 'cash',
+                    selectedColor: Colors.green,
+                    labelStyle: TextStyle(
+                        color: _paymentMethod == 'cash' ? Colors.white : null,
+                        fontWeight: _paymentMethod == 'cash' ? FontWeight.w600 : null),
+                    onSelected: (_) => setState(() => _paymentMethod = 'cash'),
+                  ),
+                  ChoiceChip(
+                    avatar: Icon(Icons.mobile_friendly, size: 16,
+                        color: _paymentMethod == 'instapay' ? Colors.white : Colors.blue),
+                    label: const Text('InstaPay'),
+                    selected: _paymentMethod == 'instapay',
+                    selectedColor: Colors.blue,
+                    labelStyle: TextStyle(
+                        color: _paymentMethod == 'instapay' ? Colors.white : null,
+                        fontWeight: _paymentMethod == 'instapay' ? FontWeight.w600 : null),
+                    onSelected: (_) => setState(() => _paymentMethod = 'instapay'),
+                  ),
+                  ChoiceChip(
+                    avatar: Icon(Icons.credit_card, size: 16,
+                        color: _paymentMethod == 'credit_card' ? Colors.white : Colors.purple),
+                    label: const Text('Credit Card'),
+                    selected: _paymentMethod == 'credit_card',
+                    selectedColor: Colors.purple,
+                    labelStyle: TextStyle(
+                        color: _paymentMethod == 'credit_card' ? Colors.white : null,
+                        fontWeight: _paymentMethod == 'credit_card' ? FontWeight.w600 : null),
+                    onSelected: (_) => setState(() => _paymentMethod = 'credit_card'),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),

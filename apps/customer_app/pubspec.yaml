@@ -31,6 +31,9 @@ dependencies:
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
 
+  # Links & phone
+  url_launcher: ^6.2.6
+
   # Utils
   shared_preferences: ^2.2.3
   uuid: ^4.4.0

@@ -1,17 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/auth_service.dart';
+import '../services/ws_service.dart';
 
 class WorkerAuthNotifier extends StateNotifier<AsyncValue<WorkerProfile?>> {
-  WorkerAuthNotifier(this._svc) : super(const AsyncValue.loading()) {
+  WorkerAuthNotifier(this._svc, this._ws) : super(const AsyncValue.loading()) {
     _init();
   }
 
   final WorkerAuthService _svc;
+  final WsService _ws;
 
   Future<void> _init() async {
     final user = await _svc.init();
     state = AsyncValue.data(user);
+    if (user != null) await _ws.connect();
   }
 
   Future<void> signIn(String email, String password) async {
@@ -19,6 +22,7 @@ class WorkerAuthNotifier extends StateNotifier<AsyncValue<WorkerProfile?>> {
     try {
       await _svc.signIn(email: email, password: password);
       state = AsyncValue.data(_svc.currentUser);
+      await _ws.connect();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
@@ -26,6 +30,7 @@ class WorkerAuthNotifier extends StateNotifier<AsyncValue<WorkerProfile?>> {
   }
 
   Future<void> signOut() async {
+    _ws.disconnect();
     await _svc.signOut();
     state = const AsyncValue.data(null);
   }
@@ -33,7 +38,10 @@ class WorkerAuthNotifier extends StateNotifier<AsyncValue<WorkerProfile?>> {
 
 final workerAuthProvider =
     StateNotifierProvider<WorkerAuthNotifier, AsyncValue<WorkerProfile?>>((ref) {
-  return WorkerAuthNotifier(ref.read(workerAuthServiceProvider));
+  return WorkerAuthNotifier(
+    ref.read(workerAuthServiceProvider),
+    ref.read(wsServiceProvider),
+  );
 });
 
 final workerAuthStateProvider = Provider<AsyncValue<WorkerProfile?>>((ref) {

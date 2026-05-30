@@ -12,6 +12,7 @@ import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/schedule/schedule_screen.dart';
 import '../../features/settings/pricing_screen.dart';
 import '../../features/team/team_screen.dart';
+import '../../features/wallet/wallet_screen.dart';
 
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Ref ref) {
@@ -61,6 +62,7 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: 'customers', builder: (_, __) => const CustomersScreen()),
           GoRoute(path: 'schedule', builder: (_, __) => const ScheduleScreen()),
           GoRoute(path: 'pricing', builder: (_, __) => const PricingScreen()),
+          GoRoute(path: 'wallet', builder: (_, __) => const WalletScreen()),
         ],
       ),
     ],

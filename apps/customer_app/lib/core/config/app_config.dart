@@ -46,6 +46,7 @@ class AppConfig {
   static const Duration searchDebounce = Duration(milliseconds: 600);
 
   // ── External URLs ─────────────────────────────────────────────────────────
+  static const String whatsAppUrl = 'https://wa.me/';
   static const String osmTileUrl =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const String nominatimSearchUrl =

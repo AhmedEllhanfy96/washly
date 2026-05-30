@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
@@ -24,6 +26,19 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
+      floatingActionButton: pricing.whenOrNull(
+        data: (p) => p.supportPhone.isEmpty
+            ? null
+            : FloatingActionButton(
+                backgroundColor: const Color(0xFF25D366),
+                tooltip: 'Support on WhatsApp',
+                onPressed: () => launchUrl(
+                  Uri.parse('${AppConfig.whatsAppUrl}${p.supportPhone}'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                child: const Icon(Icons.chat, color: Colors.white),
+              ),
+      ),
       body: CustomScrollView(
         slivers: [
           // ── Collapsible hero app bar ─────────────────────────────────
@@ -47,8 +62,11 @@ class HomeScreen extends ConsumerWidget {
                   CachedNetworkImage(
                     imageUrl: AppConfig.imgHero,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) =>
-                        const ColoredBox(color: Color(0xFF0D47A1)),
+                    placeholder: (_, __) => Shimmer.fromColors(
+                      baseColor: const Color(0xFF1565C0),
+                      highlightColor: const Color(0xFF42A5F5),
+                      child: const ColoredBox(color: Color(0xFF1565C0)),
+                    ),
                     errorWidget: (_, __, ___) =>
                         const ColoredBox(color: Color(0xFF0D47A1)),
                   ),
@@ -312,14 +330,10 @@ class _ServiceCard extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
+                placeholder: (_, __) => Shimmer.fromColors(
+                  baseColor: gradientColors.first,
+                  highlightColor: gradientColors.last,
+                  child: Container(color: gradientColors.first),
                 ),
                 errorWidget: (_, __, ___) => Container(
                   decoration: BoxDecoration(

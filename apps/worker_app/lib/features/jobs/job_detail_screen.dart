@@ -46,6 +46,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
             scheduledAt: _job.scheduledAt,
             timeSlot: _job.timeSlot,
             status: status,
+            paymentMethod: _job.paymentMethod,
           ));
       if (mounted) {
         final l10n = context.l10n;
@@ -236,6 +237,13 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                         _info(l10n.service, l10n.serviceNameFor(_job.serviceType)),
                         _info(l10n.date, fmt.format(_job.scheduledAt)),
                         _info(l10n.slot, _job.timeSlot),
+                      ]),
+                      const SizedBox(height: 12),
+                      _Card(title: 'Payment', icon: Icons.payments_outlined, rows: [
+                        _info('Method',
+                            _job.paymentMethod == 'instapay'
+                                ? 'InstaPay (customer pays digitally)'
+                                : 'Cash — collect on arrival'),
                       ]),
                     ],
                   ),

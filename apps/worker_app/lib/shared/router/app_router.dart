@@ -5,13 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/jobs/jobs_screen.dart';
+import '../../features/wallet/wallet_screen.dart';
+import '../widgets/worker_shell.dart';
 
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Ref ref) {
-    ref.listen(
-      workerAuthStateProvider,
-      (_, __) => notifyListeners(),
-    );
+    ref.listen(workerAuthStateProvider, (_, __) => notifyListeners());
   }
 }
 
@@ -19,7 +18,7 @@ final workerRouterProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(ref);
   return GoRouter(
     refreshListenable: notifier,
-    initialLocation: '/login',
+    initialLocation: '/jobs',
     redirect: (context, state) {
       final authState = ref.read(workerAuthStateProvider);
       if (authState.isLoading) return null;
@@ -31,7 +30,21 @@ final workerRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const WorkerLoginScreen()),
-      GoRoute(path: '/jobs', builder: (_, __) => const JobsScreen()),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => WorkerShell(shell: shell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/jobs', builder: (_, __) => const JobsScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/wallet', builder: (_, __) => const WorkerWalletScreen()),
+            ],
+          ),
+        ],
+      ),
     ],
   );
 });

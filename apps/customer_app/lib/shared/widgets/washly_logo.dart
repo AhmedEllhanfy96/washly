@@ -18,76 +18,30 @@ class WashlyLogo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: size,
           height: size,
+          width: size * 2.2,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0D47A1), Color(0xFF00ACC1)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(size * 0.15),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0D47A1).withOpacity(0.45),
-                blurRadius: size * 0.35,
-                offset: Offset(0, size * 0.12),
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: size * 0.28,
+                offset: Offset(0, size * 0.1),
               ),
             ],
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Large faint water drop — gives depth
-              Icon(
-                Icons.water_drop,
-                color: Colors.white.withOpacity(0.12),
-                size: size * 0.78,
-              ),
-              // Main car icon
-              Padding(
-                padding: EdgeInsets.only(top: size * 0.05),
-                child: Icon(
-                  Icons.directions_car,
-                  color: Colors.white,
-                  size: size * 0.44,
-                ),
-              ),
-              // Accent drop top-right
-              Positioned(
-                top: size * 0.14,
-                right: size * 0.14,
-                child: Icon(
-                  Icons.water_drop,
-                  color: const Color(0xFF80DEEA),
-                  size: size * 0.19,
-                ),
-              ),
-              // Accent drop top-left smaller
-              Positioned(
-                top: size * 0.18,
-                left: size * 0.18,
-                child: Icon(
-                  Icons.water_drop,
-                  color: Colors.white.withOpacity(0.5),
-                  size: size * 0.12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: size * 0.13),
-        Text(
-          'WASHLY',
-          style: TextStyle(
-            color: textColor,
-            fontSize: size * 0.27,
-            fontWeight: FontWeight.w900,
-            letterSpacing: size * 0.065,
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: EdgeInsets.all(size * 0.08),
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.contain,
+            ),
           ),
         ),
         if (showTagline) ...[
-          SizedBox(height: size * 0.05),
+          SizedBox(height: size * 0.14),
           Text(
             'Your car, sparkled clean',
             style: TextStyle(

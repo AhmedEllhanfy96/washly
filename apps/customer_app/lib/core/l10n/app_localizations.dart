@@ -226,6 +226,8 @@ class AppLocalizations {
   String get no => _ar ? 'لا' : 'No';
   String get yesCancel => _ar ? 'نعم، إلغاء' : 'Yes, cancel';
   String get cancel => _ar ? 'إلغاء' : 'Cancel';
+  String get bookingCancelledSuccess => _ar ? 'تم إلغاء الحجز بنجاح' : 'Booking cancelled successfully';
+  String get couldNotCancelBooking => _ar ? 'تعذّر إلغاء الحجز، حاول مجدداً' : 'Could not cancel booking. Please try again.';
   String get addNewCar => _ar ? '+ إضافة سيارة جديدة' : '+ Add a new car';
   String get addNewAddress => _ar ? '+ إضافة عنوان جديد' : '+ Enter a new address';
   String get useDifferentAddress => _ar ? 'استخدام عنوان مختلف' : 'Use a different address';

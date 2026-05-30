@@ -54,6 +54,12 @@ class AdminBookingService {
   Future<void> updateStatus(String bookingId, BookingStatus status) =>
       _dio.patch('/bookings/$bookingId/status', data: {'status': status.name});
 
+  Future<void> confirmPayment(String bookingId) =>
+      _dio.patch('/bookings/$bookingId/confirm-payment');
+
+  Future<void> changePaymentMethod(String bookingId, String method) =>
+      _dio.patch('/bookings/$bookingId/payment-method', data: {'paymentMethod': method});
+
   Future<void> assignTeamMember(String bookingId, String memberId) =>
       _dio.patch('/bookings/$bookingId/assign', data: {'memberId': memberId});
 
@@ -131,6 +137,7 @@ class AdminBookingService {
     required DateTime scheduledAt,
     required String timeSlot,
     String notes = '',
+    String paymentMethod = 'cash',
   }) async {
     await _dio.post('/bookings', data: {
       'customerName': customerName,
@@ -144,6 +151,7 @@ class AdminBookingService {
       'scheduledAt': scheduledAt.toIso8601String(),
       'timeSlot': timeSlot,
       'notes': notes,
+      'paymentMethod': paymentMethod,
     });
   }
 

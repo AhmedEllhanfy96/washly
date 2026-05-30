@@ -7,11 +7,17 @@ class ServicePrices {
   final int exteriorOnly;
   final int interiorOnly;
   final int fullService;
+  final String instapayNumber;
+  final String instapayLink;
+  final String supportPhone;
 
   const ServicePrices({
     required this.exteriorOnly,
     required this.interiorOnly,
     required this.fullService,
+    this.instapayNumber = '',
+    this.instapayLink = '',
+    this.supportPhone = '',
   });
 
   static const defaults = ServicePrices(
@@ -32,13 +38,22 @@ class PricingService {
     try {
       final res = await _dio.get('/settings');
       final data = res.data as Map<String, dynamic>;
+      String _str(String key) {
+        final v = data[key];
+        if (v == null) return '';
+        final s = v.toString().replaceAll('"', '');
+        return s == 'null' ? '' : s;
+      }
       return ServicePrices(
-        exteriorOnly: int.tryParse(data['price_exterior_only']?.toString() ?? '') ??
+        exteriorOnly: int.tryParse(_str('price_exterior_only')) ??
             AppConfig.priceExteriorOnly,
-        interiorOnly: int.tryParse(data['price_interior_only']?.toString() ?? '') ??
+        interiorOnly: int.tryParse(_str('price_interior_only')) ??
             AppConfig.priceInteriorOnly,
-        fullService: int.tryParse(data['price_full_service']?.toString() ?? '') ??
+        fullService: int.tryParse(_str('price_full_service')) ??
             AppConfig.priceFullService,
+        instapayNumber: _str('instapay_number'),
+        instapayLink:   _str('instapay_link'),
+        supportPhone:   _str('support_phone'),
       );
     } catch (_) {
       return ServicePrices.defaults;

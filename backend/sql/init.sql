@@ -91,8 +91,44 @@ CREATE TABLE IF NOT EXISTS app_settings (
 INSERT INTO app_settings (key, value) VALUES
   ('price_exterior_only', '195'),
   ('price_interior_only', '220'),
-  ('price_full_service',  '250')
+  ('price_full_service',  '250'),
+  ('instapay_number',     '""'),
+  ('instapay_link',       '""'),
+  ('support_phone',       '""')
 ON CONFLICT (key) DO NOTHING;
+
+-- Payment tracking on bookings
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cash';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pending';
+
+-- Worker wallet (money workers owe to company after collecting from customers)
+CREATE TABLE IF NOT EXISTS worker_wallet (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  worker_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  booking_id UUID UNIQUE REFERENCES bookings(id) ON DELETE SET NULL,
+  amount INTEGER NOT NULL,
+  payment_method TEXT NOT NULL DEFAULT 'cash',
+  status TEXT NOT NULL DEFAULT 'pending',
+  note TEXT NOT NULL DEFAULT '',
+  settled_at TIMESTAMPTZ,
+  settled_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Company wallet — money received by the company
+-- source: 'instapay' (customer paid digitally) | 'cash_collected' (collected from worker)
+CREATE TABLE IF NOT EXISTS company_wallet (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source      TEXT NOT NULL,
+  booking_id  UUID REFERENCES bookings(id) ON DELETE SET NULL,
+  worker_id   UUID REFERENCES users(id)   ON DELETE SET NULL,
+  amount      INTEGER NOT NULL,
+  note        TEXT NOT NULL DEFAULT '',
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+-- Prevent double-entry for the same booking+source combo
+CREATE UNIQUE INDEX IF NOT EXISTS company_wallet_booking_source
+  ON company_wallet (booking_id, source) WHERE booking_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

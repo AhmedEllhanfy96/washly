@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -166,14 +167,10 @@ class _ServiceCard extends StatelessWidget {
                     CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: gradientColors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
+                      placeholder: (_, __) => Shimmer.fromColors(
+                        baseColor: gradientColors.first,
+                        highlightColor: gradientColors.last,
+                        child: Container(color: gradientColors.first),
                       ),
                       errorWidget: (_, __, ___) => Container(
                         decoration: BoxDecoration(

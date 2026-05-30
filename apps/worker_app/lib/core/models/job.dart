@@ -31,6 +31,7 @@ class Job {
   final DateTime scheduledAt;
   final String timeSlot;
   final JobStatus status;
+  final String paymentMethod;
 
   const Job({
     required this.id,
@@ -44,6 +45,7 @@ class Job {
     required this.scheduledAt,
     required this.timeSlot,
     required this.status,
+    this.paymentMethod = 'cash',
   });
 
   factory Job.fromJson(Map<String, dynamic> json) => Job(
@@ -58,6 +60,7 @@ class Job {
         scheduledAt: DateTime.parse(json['scheduledAt'] as String),
         timeSlot: json['timeSlot'] as String? ?? '',
         status: JobStatus.fromString(json['status'] as String? ?? 'pending'),
+        paymentMethod: json['paymentMethod'] as String? ?? 'cash',
       );
 
   String get carSummary {
