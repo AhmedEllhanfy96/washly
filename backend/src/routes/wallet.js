@@ -25,44 +25,7 @@ export default async function walletRoutes(app) {
       ALTER TABLE company_wallet ADD COLUMN IF NOT EXISTS reconciled_at TIMESTAMPTZ
     `);
 
-    // Backfill: confirmed instapay bookings that were missed before company_wallet existed
-    await pool.query(`
-      INSERT INTO company_wallet (source, booking_id, worker_id, amount)
-      SELECT
-        'instapay',
-        b.id,
-        NULL,
-        COALESCE(
-          (SELECT (value #>> '{}')::int FROM app_settings WHERE key =
-            CASE b.service_type
-              WHEN 'exteriorOnly'  THEN 'price_exterior_only'
-              WHEN 'exterior_only' THEN 'price_exterior_only'
-              WHEN 'interiorOnly'  THEN 'price_interior_only'
-              WHEN 'interior_only' THEN 'price_interior_only'
-              WHEN 'fullService'   THEN 'price_full_service'
-              WHEN 'full_service'  THEN 'price_full_service'
-              ELSE 'price_exterior_only'
-            END
-          ), 0
-        )
-      FROM bookings b
-      WHERE b.payment_method = 'instapay'
-        AND b.payment_status = 'confirmed'
-      ON CONFLICT (booking_id, source) WHERE booking_id IS NOT NULL DO NOTHING
-    `);
-
-    // Backfill: settled worker cash entries that were missed
-    await pool.query(`
-      INSERT INTO company_wallet (source, booking_id, worker_id, amount)
-      SELECT 'cash_collected', ww.booking_id, ww.worker_id, ww.amount
-      FROM worker_wallet ww
-      WHERE ww.status = 'settled'
-        AND ww.payment_method = 'cash'
-        AND ww.booking_id IS NOT NULL
-      ON CONFLICT (booking_id, source) WHERE booking_id IS NOT NULL DO NOTHING
-    `);
-
-    console.log('[wallet] company_wallet migration + backfill OK');
+    console.log('[wallet] company_wallet migration OK');
   } catch (err) {
     console.warn('[wallet] migration error:', err.message);
   }
