@@ -4,11 +4,13 @@ enum ServiceType { exteriorOnly, interiorOnly, fullService }
 
 enum PaymentMethod {
   cash,
-  instapay;
+  instapay,
+  credit_card;
 
   String get label => switch (this) {
         cash => 'Pay on Arrival',
         instapay => 'InstaPay',
+        credit_card => 'Credit Card',
       };
 
   static PaymentMethod fromString(String v) =>

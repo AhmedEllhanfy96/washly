@@ -177,7 +177,9 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
           child: Column(
             children: [
               if (flow.paymentMethod == PaymentMethod.instapay)
-                _InstapayPanel(price: _price(flow.serviceType, prices)),
+                _InstapayPanel(price: _price(flow.serviceType, prices))
+              else if (flow.paymentMethod == PaymentMethod.credit_card)
+                _CreditCardPanel(price: _price(flow.serviceType, prices)),
               const SizedBox(height: 12),
               PrimaryButton(
                 label: l10n.submitBooking,
@@ -333,6 +335,52 @@ class _InstapayPanel extends ConsumerWidget {
   }
 }
 
+// ── Credit card info panel ───────────────────────────────────────────────────
+
+class _CreditCardPanel extends StatelessWidget {
+  final String price;
+  const _CreditCardPanel({required this.price});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.purple[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.purple[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.credit_card, color: Colors.purple[700], size: 18),
+            const SizedBox(width: 8),
+            Text('Credit Card Payment',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple[800],
+                    fontSize: 13)),
+          ]),
+          const SizedBox(height: 10),
+          Text(
+            'Amount to pay: $price',
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.purple[900]),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'A payment link will be sent to you after the booking is confirmed.',
+            style: TextStyle(fontSize: 12, color: Colors.purple[700]),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Payment method selector ──────────────────────────────────────────────────
 
 class _PaymentMethodSelector extends StatelessWidget {
@@ -359,6 +407,14 @@ class _PaymentMethodSelector extends StatelessWidget {
           selected: selected == PaymentMethod.instapay,
           color: AppColors.primary,
           onTap: () => onChanged(PaymentMethod.instapay),
+        ),
+        const SizedBox(width: 12),
+        _MethodCard(
+          method: PaymentMethod.credit_card,
+          icon: Icons.credit_card,
+          selected: selected == PaymentMethod.credit_card,
+          color: Colors.purple,
+          onTap: () => onChanged(PaymentMethod.credit_card),
         ),
       ],
     );
@@ -409,10 +465,14 @@ class _MethodCard extends StatelessWidget {
                   color: selected ? color : Colors.grey[700],
                 ),
               ),
-              if (method == PaymentMethod.cash)
-                Text('Pay the worker', style: TextStyle(fontSize: 10, color: Colors.grey[500]))
-              else
-                Text('Pay via app', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+              Text(
+                switch (method) {
+                  PaymentMethod.cash => 'Pay the worker',
+                  PaymentMethod.instapay => 'Pay via app',
+                  PaymentMethod.credit_card => 'Visa / Mastercard',
+                },
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              ),
             ],
           ),
         ),
