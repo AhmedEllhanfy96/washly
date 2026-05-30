@@ -4,6 +4,13 @@ import { broadcast } from '../ws.js';
 export default async function (app) {
   const auth = { preHandler: [app.authenticate] };
 
+  // Idempotent migration — add price column to existing deployments
+  try {
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS price INTEGER NOT NULL DEFAULT 0`);
+  } catch (err) {
+    console.warn('[bookings] migration error:', err.message);
+  }
+
   // GET all bookings — admin: all, worker: assigned to them, customer: own
   app.get('/', auth, async (req) => {
     const { uid, role } = req.user;
@@ -32,13 +39,14 @@ export default async function (app) {
       notes = '', source = 'app', paymentMethod = 'cash',
     } = req.body;
 
+    const bookedPrice = await _lookupPrice(serviceType);
     const { rows } = await pool.query(
       `INSERT INTO bookings
          (user_id, customer_name, customer_phone, car, service_type, address,
-          latitude, longitude, scheduled_at, time_slot, notes, source, payment_method)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+          latitude, longitude, scheduled_at, time_slot, notes, source, payment_method, price)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [uid, customerName, customerPhone, JSON.stringify(car), serviceType,
-       address, latitude, longitude, scheduledAt, timeSlot, notes, source, paymentMethod]
+       address, latitude, longitude, scheduledAt, timeSlot, notes, source, paymentMethod, bookedPrice]
     );
     const booking = toBooking(rows[0]);
     broadcast({ type: 'booking_created', booking });
@@ -83,10 +91,12 @@ export default async function (app) {
     // Record in company wallet — fire-and-forget; don't fail the confirm if table missing
     try {
       const pmSource = rows[0].payment_method === 'credit_card' ? 'credit_card' : 'instapay';
+      const lockedPrice = (rows[0].price && rows[0].price > 0) ? rows[0].price : null;
       await _addToCompanyWallet({
         source: pmSource,
         bookingId: rows[0].id,
         serviceType: rows[0].service_type,
+        amount: lockedPrice,
       });
     } catch (err) {
       console.error('[wallet] company_wallet insert failed (run migration):', err.message);
@@ -143,7 +153,8 @@ async function _createCashWalletEntry(row) {
   );
   if (existing.length) return;
 
-  const amount = await _lookupPrice(row.service_type);
+  // Use the price locked-in at booking time; fall back to live lookup for old rows
+  const amount = (row.price && row.price > 0) ? row.price : await _lookupPrice(row.service_type);
 
   await pool.query(
     `INSERT INTO worker_wallet (worker_id, booking_id, amount, payment_method)
@@ -198,6 +209,7 @@ function toBooking(r) {
     source: r.source ?? 'app',
     paymentMethod: r.payment_method ?? 'cash',
     paymentStatus: r.payment_status ?? 'pending',
+    price: r.price ? parseInt(r.price) : 0,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
