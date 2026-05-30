@@ -72,15 +72,20 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
     }
   }
 
-  String _price(ServiceType? t) => switch (t) {
-        ServiceType.fullService => '${AppConfig.priceFullService} ${AppConfig.currency}',
-        ServiceType.interiorOnly => '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
-        _ => '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
+  String _price(ServiceType? t, ServicePrices prices) => switch (t) {
+        ServiceType.fullService => '${prices.fullService} ${AppConfig.currency}',
+        ServiceType.interiorOnly => '${prices.interiorOnly} ${AppConfig.currency}',
+        _ => '${prices.exteriorOnly} ${AppConfig.currency}',
       };
 
   @override
   Widget build(BuildContext context) {
     final flow = ref.watch(bookingFlowProvider);
+    final prices = ref.watch(pricingProvider).valueOrNull ?? const ServicePrices(
+      exteriorOnly: AppConfig.priceExteriorOnly,
+      interiorOnly: AppConfig.priceInteriorOnly,
+      fullService:  AppConfig.priceFullService,
+    );
     final fmt = DateFormat('EEEE, MMMM d, yyyy');
     final l10n = context.l10n;
 
@@ -115,7 +120,7 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
                       flow.serviceType != null
                           ? l10n.serviceTypeName(flow.serviceType!)
                           : ''),
-                  _Row(l10n.price, _price(flow.serviceType)),
+                  _Row(l10n.price, _price(flow.serviceType, prices)),
                 ]),
 
                 const SizedBox(height: 16),
@@ -172,7 +177,7 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
           child: Column(
             children: [
               if (flow.paymentMethod == PaymentMethod.instapay)
-                _InstapayPanel(price: _price(flow.serviceType)),
+                _InstapayPanel(price: _price(flow.serviceType, prices)),
               const SizedBox(height: 12),
               PrimaryButton(
                 label: l10n.submitBooking,

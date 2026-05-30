@@ -7,6 +7,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/providers/booking_provider.dart';
+import '../../../core/providers/pricing_provider.dart';
 import '../../../shared/widgets/primary_button.dart';
 
 class ServiceSelectionStep extends ConsumerWidget {
@@ -16,7 +17,15 @@ class ServiceSelectionStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(bookingFlowProvider).serviceType;
+    final pricing = ref.watch(pricingProvider);
     final l10n = context.l10n;
+
+    // Use live prices from DB, fall back to AppConfig defaults while loading
+    final prices = pricing.valueOrNull ?? const ServicePrices(
+      exteriorOnly: AppConfig.priceExteriorOnly,
+      interiorOnly: AppConfig.priceInteriorOnly,
+      fullService:  AppConfig.priceFullService,
+    );
 
     return Column(
       children: [
@@ -36,7 +45,7 @@ class ServiceSelectionStep extends ConsumerWidget {
                   imageUrl: AppConfig.imgExterior,
                   title: l10n.exteriorOnly,
                   description: l10n.exteriorOnlyDesc,
-                  price: '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
+                  price: '${prices.exteriorOnly} ${AppConfig.currency}',
                   features: [
                     l10n.featExteriorWash,
                     l10n.featWheelCleaning,
@@ -54,7 +63,7 @@ class ServiceSelectionStep extends ConsumerWidget {
                   imageUrl: AppConfig.imgInterior,
                   title: l10n.interiorOnly,
                   description: l10n.interiorOnlyDesc,
-                  price: '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
+                  price: '${prices.interiorOnly} ${AppConfig.currency}',
                   features: [
                     l10n.featVacuum,
                     l10n.featDashboardWipe,
@@ -72,7 +81,7 @@ class ServiceSelectionStep extends ConsumerWidget {
                   imageUrl: AppConfig.imgFullService,
                   title: l10n.fullService,
                   description: l10n.fullServiceDesc,
-                  price: '${AppConfig.priceFullService} ${AppConfig.currency}',
+                  price: '${prices.fullService} ${AppConfig.currency}',
                   features: [
                     l10n.featEverythingExterior,
                     l10n.featVacuum,
