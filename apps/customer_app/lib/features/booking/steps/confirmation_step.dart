@@ -12,6 +12,7 @@ import '../../../core/models/time_slot.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../core/providers/pricing_provider.dart';
+import '../../../core/services/pricing_service.dart';
 import '../../../core/services/booking_service.dart';
 import '../../../shared/widgets/primary_button.dart';
 

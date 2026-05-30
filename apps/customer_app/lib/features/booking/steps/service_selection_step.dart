@@ -8,6 +8,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../core/providers/pricing_provider.dart';
+import '../../../core/services/pricing_service.dart';
 import '../../../shared/widgets/primary_button.dart';
 
 class ServiceSelectionStep extends ConsumerWidget {
