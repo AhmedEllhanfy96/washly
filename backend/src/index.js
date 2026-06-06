@@ -12,6 +12,7 @@ import walletRoutes from './routes/wallet.js';
 import servicesRoutes from './routes/services.js';
 import promosRoutes from './routes/promos.js';
 import { registerWsRoutes } from './ws.js';
+import { pool } from './db.js';
 
 const app = Fastify({ logger: true });
 
@@ -28,6 +29,18 @@ app.decorate('authenticate', async (request, reply) => {
 });
 
 app.get('/health', async () => ({ status: 'ok' }));
+
+// Sync services table prices from app_settings on startup (one-time backfill for existing deployments)
+try {
+  await pool.query(`
+    UPDATE services s
+    SET price = (a.value #>> '{}')::int
+    FROM app_settings a
+    WHERE (a.key = 'price_exterior_only' AND s.key = 'exterior_only')
+       OR (a.key = 'price_interior_only' AND s.key = 'interior_only')
+       OR (a.key = 'price_full_service'  AND s.key = 'full_service')
+  `);
+} catch (_) { /* services table may not exist yet on very first boot */ }
 
 await app.register(authRoutes, { prefix: '/auth' });
 await app.register(bookingRoutes, { prefix: '/bookings' });

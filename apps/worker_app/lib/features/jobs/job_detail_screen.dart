@@ -275,6 +275,24 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                   : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Navigate button — always visible while job is active
+                        if (_job.status == JobStatus.confirmed ||
+                            _job.status == JobStatus.inProgress) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              onPressed: _openGoogleMaps,
+                              icon: const Icon(Icons.navigation_outlined, size: 20),
+                              label: const Text('Navigate to Customer'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.blue[700],
+                                side: BorderSide(color: Colors.blue[400]!),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         if (_job.status == JobStatus.confirmed)
                           SizedBox(
                             width: double.infinity,
