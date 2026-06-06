@@ -45,7 +45,7 @@ $COMPOSE -f docker-compose.vm.yml pull
 
 echo ""
 echo "=== Restarting services ==="
-$COMPOSE -f docker-compose.vm.yml down
+$COMPOSE -f docker-compose.vm.yml down --remove-orphans
 $COMPOSE -f docker-compose.vm.yml up -d
 
 echo ""
