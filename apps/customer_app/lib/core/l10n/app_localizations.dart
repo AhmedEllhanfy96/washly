@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../config/app_config.dart';
+import '../models/booking.dart';
 
 class AppLocalizations {
   final Locale locale;
