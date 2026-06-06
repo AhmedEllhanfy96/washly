@@ -45,3 +45,10 @@ firebase.json
 # Firebase debug
 firebase-debug.log
 *Zone.Identifier
+
+# SSH keys and credentials
+*.key
+*.pem
+
+# Node dependencies
+node_modules/
