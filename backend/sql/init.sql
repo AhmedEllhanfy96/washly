@@ -139,6 +139,56 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Services catalog — source of truth for prices and what's offered
+-- category: 'wash' (main services) | 'addon' (future pay items)
+CREATE TABLE IF NOT EXISTS services (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  price INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  category TEXT NOT NULL DEFAULT 'wash',
+  image_url TEXT NOT NULL DEFAULT '',
+  features JSONB NOT NULL DEFAULT '[]',
+  badge TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS services_updated_at ON services;
+CREATE TRIGGER services_updated_at
+  BEFORE UPDATE ON services
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+INSERT INTO services (key, name, description, price, sort_order, features, badge) VALUES
+  ('exterior_only', 'Exterior Only', 'Complete exterior wash and shine', 195, 1,
+   '["Exterior Wash","Wheel Cleaning","Towel Dry","Window Cleaning"]', ''),
+  ('interior_only', 'Interior Only', 'Deep interior cleaning and refresh', 220, 2,
+   '["Vacuum","Dashboard Wipe","Window Interior","Air Freshener"]', ''),
+  ('full_service',  'Full Service',  'Complete inside and outside wash',  250, 3,
+   '["Exterior Wash","Wheel Cleaning","Vacuum","Dashboard Wipe","Window Interior","Air Freshener"]', 'BEST VALUE')
+ON CONFLICT (key) DO NOTHING;
+
+-- Promo codes with percentage discounts on wash services
+CREATE TABLE IF NOT EXISTS promos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,
+  discount_percent INTEGER NOT NULL CHECK (discount_percent > 0 AND discount_percent <= 100),
+  valid_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  valid_until TIMESTAMPTZ NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  max_uses INTEGER DEFAULT NULL,
+  used_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Promo tracking on bookings
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_code TEXT DEFAULT NULL;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS original_price INTEGER DEFAULT 0;
+
 -- Default admin (password: admin123) — change in production
 INSERT INTO users (email, password_hash, name, role)
 VALUES ('admin@washly.com', crypt('admin123', gen_salt('bf')), 'Admin', 'admin')

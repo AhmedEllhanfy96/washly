@@ -4,12 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../core/config/app_config.dart';
-import '../../../core/l10n/app_localizations.dart';
-import '../../../core/models/booking.dart';
+import '../../../core/models/service.dart';
 import '../../../core/providers/booking_provider.dart';
-import '../../../core/providers/pricing_provider.dart';
-import '../../../core/services/pricing_service.dart';
+import '../../../core/providers/services_provider.dart';
 import '../../../shared/widgets/primary_button.dart';
+
+// Colour themes cycle for services (index % themes.length)
+const _kThemes = [
+  [Color(0xFF1565C0), Color(0xFF00ACC1)],
+  [Color(0xFF00695C), Color(0xFF4CAF50)],
+  [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+  [Color(0xFFB71C1C), Color(0xFFE57373)],
+  [Color(0xFFE65100), Color(0xFFFFB300)],
+];
 
 class ServiceSelectionStep extends ConsumerWidget {
   final VoidCallback onNext;
@@ -17,87 +24,57 @@ class ServiceSelectionStep extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(bookingFlowProvider).serviceType;
-    final pricing = ref.watch(pricingProvider);
-    final l10n = context.l10n;
-
-    // Use live prices from DB, fall back to AppConfig defaults while loading
-    final prices = pricing.valueOrNull ?? const ServicePrices(
-      exteriorOnly: AppConfig.priceExteriorOnly,
-      interiorOnly: AppConfig.priceInteriorOnly,
-      fullService:  AppConfig.priceFullService,
-    );
+    final selected = ref.watch(bookingFlowProvider).service;
+    final servicesAsync = ref.watch(servicesProvider);
 
     return Column(
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.chooseYourService,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(l10n.selectWashType,
-                    style: TextStyle(color: Colors.grey[600])),
-                const SizedBox(height: 20),
-                _ServiceCard(
-                  imageUrl: AppConfig.imgExterior,
-                  title: l10n.exteriorOnly,
-                  description: l10n.exteriorOnlyDesc,
-                  price: '${prices.exteriorOnly} ${AppConfig.currency}',
-                  features: [
-                    l10n.featExteriorWash,
-                    l10n.featWheelCleaning,
-                    l10n.featTowelDry,
-                    l10n.featWindowCleaning,
-                  ],
-                  gradientColors: const [Color(0xFF1565C0), Color(0xFF00ACC1)],
-                  isSelected: selected == ServiceType.exteriorOnly,
-                  onTap: () => ref
-                      .read(bookingFlowProvider.notifier)
-                      .setServiceType(ServiceType.exteriorOnly),
-                ),
-                const SizedBox(height: 16),
-                _ServiceCard(
-                  imageUrl: AppConfig.imgInterior,
-                  title: l10n.interiorOnly,
-                  description: l10n.interiorOnlyDesc,
-                  price: '${prices.interiorOnly} ${AppConfig.currency}',
-                  features: [
-                    l10n.featVacuum,
-                    l10n.featDashboardWipe,
-                    l10n.featWindowInterior,
-                    l10n.featAirFreshener,
-                  ],
-                  gradientColors: const [Color(0xFF00695C), Color(0xFF4CAF50)],
-                  isSelected: selected == ServiceType.interiorOnly,
-                  onTap: () => ref
-                      .read(bookingFlowProvider.notifier)
-                      .setServiceType(ServiceType.interiorOnly),
-                ),
-                const SizedBox(height: 16),
-                _ServiceCard(
-                  imageUrl: AppConfig.imgFullService,
-                  title: l10n.fullService,
-                  description: l10n.fullServiceDesc,
-                  price: '${prices.fullService} ${AppConfig.currency}',
-                  features: [
-                    l10n.featEverythingExterior,
-                    l10n.featVacuum,
-                    l10n.featDashboardWipe,
-                    l10n.featWindowInterior,
-                    l10n.featAirFreshener,
-                  ],
-                  gradientColors: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
-                  isSelected: selected == ServiceType.fullService,
-                  badge: 'BEST VALUE',
-                  onTap: () => ref
-                      .read(bookingFlowProvider.notifier)
-                      .setServiceType(ServiceType.fullService),
-                ),
-              ],
+          child: servicesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 40, color: Colors.red),
+                  const SizedBox(height: 8),
+                  Text('Could not load services: $e'),
+                  TextButton(
+                    onPressed: () => ref.invalidate(servicesProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+            data: (services) => SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Choose Your Service',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text('Select the wash type that suits you',
+                      style: TextStyle(color: Colors.grey[600])),
+                  const SizedBox(height: 20),
+                  ...services.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final svc = entry.value;
+                    final theme = _kThemes[i % _kThemes.length];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _ServiceCard(
+                        service: svc,
+                        gradientColors: theme,
+                        isSelected: selected?.id == svc.id,
+                        onTap: () => ref
+                            .read(bookingFlowProvider.notifier)
+                            .setService(svc),
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
         ),
@@ -114,7 +91,7 @@ class ServiceSelectionStep extends ConsumerWidget {
             ],
           ),
           child: PrimaryButton(
-            label: l10n.continueBtn,
+            label: 'Continue',
             onPressed: selected != null ? onNext : null,
           ),
         ),
@@ -124,26 +101,16 @@ class ServiceSelectionStep extends ConsumerWidget {
 }
 
 class _ServiceCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final String description;
-  final String price;
-  final List<String> features;
+  final WashService service;
   final List<Color> gradientColors;
   final bool isSelected;
-  final String? badge;
   final VoidCallback onTap;
 
   const _ServiceCard({
-    required this.imageUrl,
-    required this.title,
-    required this.description,
-    required this.price,
-    required this.features,
+    required this.service,
     required this.gradientColors,
     required this.isSelected,
     required this.onTap,
-    this.badge,
   });
 
   @override
@@ -168,31 +135,23 @@ class _ServiceCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image header
               SizedBox(
                 height: 110,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Shimmer.fromColors(
-                        baseColor: gradientColors.first,
-                        highlightColor: gradientColors.last,
-                        child: Container(color: gradientColors.first),
-                      ),
-                      errorWidget: (_, __, ___) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: gradientColors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Gradient overlay
+                    service.imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: service.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Shimmer.fromColors(
+                              baseColor: gradientColors.first,
+                              highlightColor: gradientColors.last,
+                              child: Container(color: gradientColors.first),
+                            ),
+                            errorWidget: (_, __, ___) => _GradientBox(gradientColors),
+                          )
+                        : _GradientBox(gradientColors),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -207,7 +166,6 @@ class _ServiceCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Price + title overlay
                     Positioned(
                       left: 14,
                       right: 14,
@@ -217,7 +175,7 @@ class _ServiceCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              title,
+                              service.name,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -226,16 +184,14 @@ class _ServiceCard extends StatelessWidget {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.5)),
+                              border: Border.all(color: Colors.white.withOpacity(0.5)),
                             ),
                             child: Text(
-                              price,
+                              '${service.price} ${AppConfig.currency}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -246,20 +202,18 @@ class _ServiceCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Badge
-                    if (badge != null)
+                    if (service.badge.isNotEmpty)
                       Positioned(
                         top: 10,
                         right: 10,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: Colors.amber,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            badge!,
+                            service.badge,
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -268,7 +222,6 @@ class _ServiceCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    // Selected check
                     if (isSelected)
                       Positioned(
                         top: 10,
@@ -280,10 +233,7 @@ class _ServiceCard extends StatelessWidget {
                             color: Colors.white,
                             shape: BoxShape.circle,
                             boxShadow: [
-                              BoxShadow(
-                                color: color.withOpacity(0.3),
-                                blurRadius: 6,
-                              ),
+                              BoxShadow(color: color.withOpacity(0.3), blurRadius: 6),
                             ],
                           ),
                           child: Icon(Icons.check, color: color, size: 18),
@@ -292,35 +242,35 @@ class _ServiceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Features list
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      description,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: features
-                          .map((f) => Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.check_circle,
-                                      size: 14, color: color),
-                                  const SizedBox(width: 4),
-                                  Text(f,
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[700])),
-                                ],
-                              ))
-                          .toList(),
-                    ),
+                    if (service.description.isNotEmpty)
+                      Text(
+                        service.description,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    if (service.features.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: service.features
+                            .map((f) => Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle, size: 14, color: color),
+                                    const SizedBox(width: 4),
+                                    Text(f,
+                                        style: TextStyle(
+                                            fontSize: 12, color: Colors.grey[700])),
+                                  ],
+                                ))
+                            .toList(),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -330,4 +280,20 @@ class _ServiceCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GradientBox extends StatelessWidget {
+  final List<Color> colors;
+  const _GradientBox(this.colors);
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      );
 }

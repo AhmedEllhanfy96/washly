@@ -176,8 +176,19 @@ class BookingDetailScreen extends ConsumerWidget {
                       title: l10n.service,
                       icon: Icons.cleaning_services,
                       children: [
-                        _Row(l10n.type,
-                            l10n.serviceTypeDetail(booking.serviceType)),
+                        _Row(l10n.type, booking.displayServiceName.isNotEmpty
+                            ? booking.displayServiceName
+                            : l10n.serviceTypeDetail(booking.serviceType)),
+                        if (booking.price > 0) ...[
+                          if (booking.discountPercent > 0) ...[
+                            _Row('Original', '${booking.originalPrice} EGP',
+                                muted: true),
+                            _Row('Discount',
+                                '-${booking.discountPercent}% (${booking.promoCode})'),
+                          ],
+                          _Row('Price', '${booking.price} EGP',
+                              bold: true),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -341,7 +352,11 @@ class _CopyMessageButton extends StatelessWidget {
     final hasCoords = lat != 0 && lng != 0;
     final mapLink =
         hasCoords ? 'https://maps.google.com/?q=$lat,$lng' : null;
-    final service = l10n.serviceTypeDetail(booking.serviceType);
+    final serviceLabel = booking.displayServiceName.isNotEmpty
+        ? booking.displayServiceName
+        : l10n.serviceTypeDetail(booking.serviceType);
+    final priceLabel = booking.price > 0 ? ' — ${booking.price} EGP' : '';
+    final service = '$serviceLabel$priceLabel';
 
     final buffer = StringBuffer();
     buffer.writeln('🚗 Washly — New Booking');
@@ -838,7 +853,9 @@ class _Section extends StatelessWidget {
 class _Row extends StatelessWidget {
   final String label;
   final String value;
-  const _Row(this.label, this.value);
+  final bool bold;
+  final bool muted;
+  const _Row(this.label, this.value, {this.bold = false, this.muted = false});
 
   @override
   Widget build(BuildContext context) {
@@ -854,7 +871,11 @@ class _Row extends StatelessWidget {
           ),
           Expanded(
               child: Text(value,
-                  style: const TextStyle(fontWeight: FontWeight.w500))),
+                  style: TextStyle(
+                    fontWeight: bold ? FontWeight.bold : FontWeight.w500,
+                    color: muted ? Colors.grey[400] : null,
+                    decoration: muted ? TextDecoration.lineThrough : null,
+                  ))),
         ],
       ),
     );

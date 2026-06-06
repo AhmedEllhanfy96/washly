@@ -73,19 +73,34 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
   }
 
   Future<void> _openGoogleMaps() async {
-    final Uri url;
+    bool opened = false;
+
     if (_job.latitude != 0 && _job.longitude != 0) {
-      url = Uri.parse(
-          '${AppConfig.googleMapsDirectionsUrl}${_job.latitude},${_job.longitude}');
-    } else {
-      final encoded = Uri.encodeComponent(_job.address);
-      url = Uri.parse('${AppConfig.googleMapsSearchUrl}$encoded');
-    }
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.couldNotOpenMaps)));
+      final lat = _job.latitude;
+      final lng = _job.longitude;
+
+      // Try native geo: URI first (opens Google Maps directly on Android APK)
+      final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+      if (await canLaunchUrl(geoUri)) {
+        opened = await launchUrl(geoUri, mode: LaunchMode.externalApplication);
       }
+
+      // Fallback: HTTPS Google Maps directions URL (works on web + Android browser)
+      if (!opened) {
+        final webUri = Uri.parse(
+            '${AppConfig.googleMapsDirectionsUrl}$lat,$lng');
+        opened = await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    } else {
+      // No coordinates — search by address text
+      final encoded = Uri.encodeComponent(_job.address);
+      final searchUri = Uri.parse('${AppConfig.googleMapsSearchUrl}$encoded');
+      opened = await launchUrl(searchUri, mode: LaunchMode.externalApplication);
+    }
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.couldNotOpenMaps)));
     }
   }
 

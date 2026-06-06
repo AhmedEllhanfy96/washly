@@ -9,7 +9,9 @@ import '../../features/bookings/booking_list_screen.dart';
 import '../../features/bookings/create_booking_screen.dart';
 import '../../features/customers/customers_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/promos/promos_screen.dart';
 import '../../features/schedule/schedule_screen.dart';
+import '../../features/services/services_screen.dart';
 import '../../features/settings/pricing_screen.dart';
 import '../../features/team/team_screen.dart';
 import '../../features/wallet/wallet_screen.dart';
@@ -63,6 +65,8 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: 'schedule', builder: (_, __) => const ScheduleScreen()),
           GoRoute(path: 'pricing', builder: (_, __) => const PricingScreen()),
           GoRoute(path: 'wallet', builder: (_, __) => const WalletScreen()),
+          GoRoute(path: 'services', builder: (_, __) => const ServicesScreen()),
+          GoRoute(path: 'promos', builder: (_, __) => const PromosScreen()),
         ],
       ),
     ],

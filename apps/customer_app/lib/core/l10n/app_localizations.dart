@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_config.dart';
-import '../models/booking.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -243,19 +242,11 @@ class AppLocalizations {
         BookingStatus.cancelled => _ar ? 'ملغى' : 'Cancelled',
       };
 
-  String serviceTypeName(ServiceType t) => switch (t) {
-        ServiceType.exteriorOnly => exteriorOnly,
-        ServiceType.interiorOnly => interiorOnly,
-        ServiceType.fullService => fullService,
-      };
-
-  String serviceTypePrice(ServiceType t) => switch (t) {
-        ServiceType.exteriorOnly =>
-          '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
-        ServiceType.interiorOnly =>
-          '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
-        ServiceType.fullService =>
-          '${AppConfig.priceFullService} ${AppConfig.currency}',
+  String serviceTypeName(String key) => switch (key) {
+        'exteriorOnly' || 'exterior_only' => exteriorOnly,
+        'interiorOnly' || 'interior_only' => interiorOnly,
+        'fullService'  || 'full_service'  => fullService,
+        _ => key,
       };
 }
 

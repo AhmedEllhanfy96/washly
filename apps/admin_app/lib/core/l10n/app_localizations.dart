@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_config.dart';
-import '../models/booking.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -203,23 +202,15 @@ class AppLocalizations {
         BookingStatus.cancelled => _ar ? 'ملغى' : 'Cancelled',
       };
 
-  String serviceTypeName(ServiceType t) => switch (t) {
-        ServiceType.exteriorOnly => _ar ? 'خارجي فقط' : 'Exterior Only',
-        ServiceType.interiorOnly => _ar ? 'داخلي فقط' : 'Interior Only',
-        ServiceType.fullService => _ar ? 'خارجي + داخلي كامل' : 'Full Service',
+  String serviceTypeName(String key) => switch (key) {
+        'exteriorOnly' || 'exterior_only' => _ar ? 'خارجي فقط' : 'Exterior Only',
+        'interiorOnly' || 'interior_only' => _ar ? 'داخلي فقط' : 'Interior Only',
+        'fullService'  || 'full_service'  => _ar ? 'خارجي + داخلي كامل' : 'Full Service',
+        _ => key,
       };
 
-  String serviceTypeDetail(ServiceType t) => switch (t) {
-        ServiceType.exteriorOnly => _ar
-            ? 'خارجي فقط — ${AppConfig.priceExteriorOnly} ج.م.'
-            : 'Exterior Only — ${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
-        ServiceType.interiorOnly => _ar
-            ? 'داخلي فقط — ${AppConfig.priceInteriorOnly} ج.م.'
-            : 'Interior Only — ${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
-        ServiceType.fullService => _ar
-            ? 'خارجي + داخلي كامل — ${AppConfig.priceFullService} ج.م.'
-            : 'Full Interior + Exterior — ${AppConfig.priceFullService} ${AppConfig.currency}',
-      };
+  // Shows service name only (price is now dynamic, shown from booking.price)
+  String serviceTypeDetail(String key) => serviceTypeName(key);
 }
 
 class _AppLocalizationsDelegate

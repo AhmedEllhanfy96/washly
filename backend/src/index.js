@@ -9,6 +9,8 @@ import slotsRoutes from './routes/slots.js';
 import profileRoutes from './routes/profile.js';
 import settingsRoutes from './routes/settings.js';
 import walletRoutes from './routes/wallet.js';
+import servicesRoutes from './routes/services.js';
+import promosRoutes from './routes/promos.js';
 import { registerWsRoutes } from './ws.js';
 
 const app = Fastify({ logger: true });
@@ -34,6 +36,8 @@ await app.register(slotsRoutes, { prefix: '/slots' });
 await app.register(profileRoutes, { prefix: '/profile' });
 await app.register(settingsRoutes, { prefix: '/settings' });
 await app.register(walletRoutes, { prefix: '/wallet' });
+await app.register(servicesRoutes, { prefix: '/services' });
+await app.register(promosRoutes, { prefix: '/promos' });
 
 registerWsRoutes(app);
 

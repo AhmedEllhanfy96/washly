@@ -1,5 +1,3 @@
-enum ServiceType { exteriorOnly, interiorOnly, fullService }
-
 enum BookingStatus {
   pending,
   confirmed,
@@ -28,7 +26,8 @@ class AdminBooking {
   final String customerName;
   final String customerPhone;
   final Map<String, dynamic> car;
-  final ServiceType serviceType;
+  final String serviceType;
+  final String serviceName;
   final double latitude;
   final double longitude;
   final DateTime scheduledAt;
@@ -39,6 +38,10 @@ class AdminBooking {
   final String source;
   final String paymentMethod;
   final String paymentStatus;
+  final int price;
+  final int originalPrice;
+  final int discountPercent;
+  final String? promoCode;
   final DateTime createdAt;
   final String address;
 
@@ -49,6 +52,7 @@ class AdminBooking {
     required this.customerPhone,
     required this.car,
     required this.serviceType,
+    this.serviceName = '',
     required this.latitude,
     required this.longitude,
     required this.address,
@@ -60,6 +64,10 @@ class AdminBooking {
     this.source = 'app',
     this.paymentMethod = 'cash',
     this.paymentStatus = 'pending',
+    this.price = 0,
+    this.originalPrice = 0,
+    this.discountPercent = 0,
+    this.promoCode,
     required this.createdAt,
   });
 
@@ -69,7 +77,8 @@ class AdminBooking {
         customerName: json['customerName'] as String? ?? 'Unknown',
         customerPhone: json['customerPhone'] as String? ?? '',
         car: (json['car'] as Map<String, dynamic>?) ?? {},
-        serviceType: _parseServiceType(json['serviceType'] as String?),
+        serviceType: json['serviceType'] as String? ?? 'exterior_only',
+        serviceName: json['serviceName'] as String? ?? '',
         latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
         longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
         address: json['address'] as String? ?? '',
@@ -81,16 +90,13 @@ class AdminBooking {
         source: json['source'] as String? ?? 'app',
         paymentMethod: json['paymentMethod'] as String? ?? 'cash',
         paymentStatus: json['paymentStatus'] as String? ?? 'pending',
+        price: (json['price'] as num?)?.toInt() ?? 0,
+        originalPrice: (json['originalPrice'] as num?)?.toInt() ?? 0,
+        discountPercent: (json['discountPercent'] as num?)?.toInt() ?? 0,
+        promoCode: json['promoCode'] as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
-  static ServiceType _parseServiceType(String? v) => switch (v) {
-    'fullService' => ServiceType.fullService,
-    'interiorOnly' => ServiceType.interiorOnly,
-    _ => ServiceType.exteriorOnly,
-  };
-
-  // Keep location map interface for booking_detail_screen compatibility
   Map<String, dynamic> get location => {
         'latitude': latitude,
         'longitude': longitude,
@@ -103,4 +109,7 @@ class AdminBooking {
     final color = car['color'] ?? '';
     return '$color $make $model'.trim();
   }
+
+  String get displayServiceName =>
+      serviceName.isNotEmpty ? serviceName : serviceType;
 }

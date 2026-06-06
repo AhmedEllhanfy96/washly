@@ -12,8 +12,8 @@ import '../../../core/models/time_slot.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/booking_provider.dart';
 import '../../../core/providers/pricing_provider.dart';
-import '../../../core/services/pricing_service.dart';
 import '../../../core/services/booking_service.dart';
+import '../../../core/services/services_service.dart';
 import '../../../shared/widgets/primary_button.dart';
 
 class ConfirmationStep extends ConsumerStatefulWidget {
@@ -26,6 +26,29 @@ class ConfirmationStep extends ConsumerStatefulWidget {
 
 class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
   bool _loading = false;
+  final _promoCtrl = TextEditingController();
+  bool _promoLoading = false;
+  String? _promoError;
+
+  @override
+  void dispose() {
+    _promoCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _applyPromo() async {
+    final code = _promoCtrl.text.trim();
+    if (code.isEmpty) return;
+    setState(() { _promoLoading = true; _promoError = null; });
+    try {
+      final result = await ref.read(servicesServiceProvider).validatePromo(code);
+      ref.read(bookingFlowProvider.notifier)
+          .setPromo(result['code'] as String, result['discountPercent'] as int);
+      if (mounted) setState(() { _promoLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _promoLoading = false; _promoError = 'Invalid or expired code'; });
+    }
+  }
 
   Future<void> _confirm() async {
     final flow = ref.read(bookingFlowProvider);
@@ -38,18 +61,21 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
         id: '',
         userId: user?.id ?? '',
         car: flow.car!,
-        serviceType: flow.serviceType!,
+        serviceType: flow.service!.key,
+        serviceName: flow.service!.name,
         location: flow.location!,
         scheduledAt: flow.selectedDate!,
         timeSlot: flow.selectedTimeSlot!,
         status: BookingStatus.pending,
         paymentMethod: flow.paymentMethod,
+        promoCode: flow.promoCode,
         createdAt: DateTime.now(),
       );
       await ref.read(bookingServiceProvider).createBooking(
             booking: booking,
             customerName: user?.name ?? '',
             customerPhone: user?.phone ?? '',
+            promoCode: flow.promoCode,
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,22 +99,15 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
     }
   }
 
-  String _price(ServiceType? t, ServicePrices prices) => switch (t) {
-        ServiceType.fullService => '${prices.fullService} ${AppConfig.currency}',
-        ServiceType.interiorOnly => '${prices.interiorOnly} ${AppConfig.currency}',
-        _ => '${prices.exteriorOnly} ${AppConfig.currency}',
-      };
-
   @override
   Widget build(BuildContext context) {
     final flow = ref.watch(bookingFlowProvider);
-    final prices = ref.watch(pricingProvider).valueOrNull ?? const ServicePrices(
-      exteriorOnly: AppConfig.priceExteriorOnly,
-      interiorOnly: AppConfig.priceInteriorOnly,
-      fullService:  AppConfig.priceFullService,
-    );
     final fmt = DateFormat('EEEE, MMMM d, yyyy');
     final l10n = context.l10n;
+    final svc = flow.service;
+    final originalPrice = svc?.price ?? 0;
+    final finalPrice = flow.finalPrice;
+    final hasDiscount = flow.discountPercent > 0;
 
     return Column(
       children: [
@@ -99,11 +118,9 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(l10n.confirmBooking,
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(l10n.reviewBooking,
-                    style: TextStyle(color: Colors.grey[600])),
+                Text(l10n.reviewBooking, style: TextStyle(color: Colors.grey[600])),
                 const SizedBox(height: 24),
 
                 _Section(title: l10n.stepCarDetails, children: [
@@ -111,17 +128,21 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
                       '${flow.car?.make ?? ''} ${flow.car?.model ?? ''}'),
                   _Row(l10n.color, flow.car?.color ?? ''),
                   _Row(l10n.plate, flow.car?.plateNumber ?? ''),
-                  if (flow.car?.year != null)
-                    _Row(l10n.year, flow.car!.year!),
+                  if (flow.car?.year != null) _Row(l10n.year, flow.car!.year!),
                 ]),
 
                 const SizedBox(height: 16),
                 _Section(title: l10n.serviceLabel, children: [
-                  _Row(l10n.serviceType,
-                      flow.serviceType != null
-                          ? l10n.serviceTypeName(flow.serviceType!)
-                          : ''),
-                  _Row(l10n.price, _price(flow.serviceType, prices)),
+                  _Row(l10n.serviceType, svc?.name ?? ''),
+                  if (hasDiscount) ...[
+                    _Row('Original Price', '$originalPrice ${AppConfig.currency}',
+                        strikethrough: true),
+                    _Row('Discount', '-${flow.discountPercent}% (${flow.promoCode})',
+                        valueColor: Colors.green),
+                    _Row(l10n.price, '$finalPrice ${AppConfig.currency}',
+                        bold: true, valueColor: Colors.green),
+                  ] else
+                    _Row(l10n.price, '$originalPrice ${AppConfig.currency}'),
                 ]),
 
                 const SizedBox(height: 16),
@@ -148,7 +169,77 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
 
                 const SizedBox(height: 20),
 
-                // ── Payment method selection ──────────────────────────────
+                // ── Promo code ──────────────────────────────────────────────
+                Text('Promo Code',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                if (flow.promoCode != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.green[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.local_offer, color: Colors.green[700], size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${flow.promoCode}  —  ${flow.discountPercent}% off',
+                            style: TextStyle(
+                                color: Colors.green[800], fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            _promoCtrl.clear();
+                            ref.read(bookingFlowProvider.notifier).clearPromo();
+                          },
+                          child: Icon(Icons.close, size: 18, color: Colors.green[700]),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _promoCtrl,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: InputDecoration(
+                            hintText: 'Enter promo code',
+                            errorText: _promoError,
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 50,
+                        child: FilledButton(
+                          onPressed: _promoLoading ? null : _applyPromo,
+                          child: _promoLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
+                              : const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                const SizedBox(height: 20),
+
+                // ── Payment method ──────────────────────────────────────────
                 Text('Payment Method',
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
@@ -178,9 +269,9 @@ class _ConfirmationStepState extends ConsumerState<ConfirmationStep> {
           child: Column(
             children: [
               if (flow.paymentMethod == PaymentMethod.instapay)
-                _InstapayPanel(price: _price(flow.serviceType, prices))
+                _InstapayPanel(price: '$finalPrice ${AppConfig.currency}')
               else if (flow.paymentMethod == PaymentMethod.credit_card)
-                _CreditCardPanel(price: _price(flow.serviceType, prices)),
+                _CreditCardPanel(price: '$finalPrice ${AppConfig.currency}'),
               const SizedBox(height: 12),
               PrimaryButton(
                 label: l10n.submitBooking,
@@ -314,14 +405,17 @@ class _InstapayPanel extends ConsumerWidget {
                     ),
                     TextButton.icon(
                       onPressed: () {
-                        final digits = s.supportPhone.replaceAll(RegExp(r'\D'), '');
+                        final digits =
+                            s.supportPhone.replaceAll(RegExp(r'\D'), '');
                         launchUrl(
                             Uri.parse('${AppConfig.whatsAppUrl}$digits'),
                             mode: LaunchMode.externalApplication);
                       },
-                      icon: const Icon(Icons.chat, size: 16, color: Color(0xFF25D366)),
+                      icon: const Icon(Icons.chat,
+                          size: 16, color: Color(0xFF25D366)),
                       label: const Text('WhatsApp',
-                          style: TextStyle(color: Color(0xFF25D366), fontSize: 12)),
+                          style: TextStyle(
+                              color: Color(0xFF25D366), fontSize: 12)),
                       style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 8)),
                     ),
@@ -336,7 +430,7 @@ class _InstapayPanel extends ConsumerWidget {
   }
 }
 
-// ── Credit card info panel ───────────────────────────────────────────────────
+// ── Credit card panel ────────────────────────────────────────────────────────
 
 class _CreditCardPanel extends StatelessWidget {
   final String price;
@@ -515,7 +609,11 @@ class _Section extends StatelessWidget {
 class _Row extends StatelessWidget {
   final String label;
   final String value;
-  const _Row(this.label, this.value);
+  final bool strikethrough;
+  final bool bold;
+  final Color? valueColor;
+  const _Row(this.label, this.value,
+      {this.strikethrough = false, this.bold = false, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -530,8 +628,14 @@ class _Row extends StatelessWidget {
                 style: TextStyle(color: Colors.grey[600], fontSize: 13)),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: TextStyle(
+                fontWeight: bold ? FontWeight.bold : FontWeight.w500,
+                color: valueColor,
+                decoration: strikethrough ? TextDecoration.lineThrough : null,
+              ),
+            ),
           ),
         ],
       ),

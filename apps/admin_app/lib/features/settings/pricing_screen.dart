@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/models/booking.dart';
 import '../../core/providers/pricing_provider.dart';
 
 class PricingScreen extends ConsumerStatefulWidget {
@@ -15,12 +13,6 @@ class PricingScreen extends ConsumerStatefulWidget {
 }
 
 class _PricingScreenState extends ConsumerState<PricingScreen> {
-  // Price fields
-  final _exteriorCtrl = TextEditingController();
-  final _interiorCtrl = TextEditingController();
-  final _fullCtrl = TextEditingController();
-  bool _priceDirty = false;
-
   // Contact / InstaPay fields
   final _instapayNumberCtrl = TextEditingController();
   final _instapayLinkCtrl = TextEditingController();
@@ -31,9 +23,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
   @override
   void dispose() {
-    _exteriorCtrl.dispose();
-    _interiorCtrl.dispose();
-    _fullCtrl.dispose();
     _instapayNumberCtrl.dispose();
     _instapayLinkCtrl.dispose();
     _supportPhoneCtrl.dispose();
@@ -43,32 +32,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   void _populate(prices) {
     if (_populated) return;
     _populated = true;
-    _exteriorCtrl.text = prices.exteriorOnly.toString();
-    _interiorCtrl.text = prices.interiorOnly.toString();
-    _fullCtrl.text = prices.fullService.toString();
     _instapayNumberCtrl.text = prices.instapayNumber;
     _instapayLinkCtrl.text = prices.instapayLink;
     _supportPhoneCtrl.text = prices.supportPhone;
-  }
-
-  Future<void> _savePrices() async {
-    final ext = int.tryParse(_exteriorCtrl.text.trim());
-    final int_ = int.tryParse(_interiorCtrl.text.trim());
-    final full = int.tryParse(_fullCtrl.text.trim());
-    if (ext == null || int_ == null || full == null || ext <= 0 || int_ <= 0 || full <= 0) {
-      _snack('Enter valid prices (whole numbers > 0)', isError: true);
-      return;
-    }
-    try {
-      await ref.read(pricingProvider.notifier).savePrices(
-            exteriorOnly: ext, interiorOnly: int_, fullService: full);
-      if (mounted) {
-        setState(() => _priceDirty = false);
-        _snack('Prices updated');
-      }
-    } catch (e) {
-      if (mounted) _snack('Failed: $e', isError: true);
-    }
   }
 
   Future<void> _saveContact() async {
@@ -111,60 +77,30 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           children: [
             // ── Service Pricing ─────────────────────────────────────────
             _SectionHeader(
-              icon: Icons.attach_money,
+              icon: Icons.cleaning_services_outlined,
               title: 'Service Pricing',
               color: AppColors.primary,
             ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.06),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 0,
+              color: AppColors.primary.withOpacity(0.05),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
               ),
-              child: Text(
-                'Price changes take effect immediately for all new bookings.',
-                style: TextStyle(color: AppColors.primary, fontSize: 12),
+              child: ListTile(
+                leading: Icon(Icons.cleaning_services_outlined,
+                    color: AppColors.primary),
+                title: const Text('Manage Services & Prices',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text(
+                    'Add, edit, or remove wash services and set their prices.',
+                    style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.go('/dashboard/services'),
               ),
             ),
-            const SizedBox(height: 16),
-            _PriceField(
-              controller: _exteriorCtrl,
-              serviceType: ServiceType.exteriorOnly,
-              color: AppColors.primary,
-              icon: Icons.water_drop_outlined,
-              label: 'Exterior Only',
-              onChanged: () => setState(() => _priceDirty = true),
-            ),
-            const SizedBox(height: 12),
-            _PriceField(
-              controller: _interiorCtrl,
-              serviceType: ServiceType.interiorOnly,
-              color: const Color(0xFF00695C),
-              icon: Icons.airline_seat_recline_extra_outlined,
-              label: 'Interior Only',
-              onChanged: () => setState(() => _priceDirty = true),
-            ),
-            const SizedBox(height: 12),
-            _PriceField(
-              controller: _fullCtrl,
-              serviceType: ServiceType.fullService,
-              color: const Color(0xFF6A1B9A),
-              icon: Icons.cleaning_services,
-              label: 'Full Service',
-              onChanged: () => setState(() => _priceDirty = true),
-            ),
-            if (_priceDirty) ...[
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _savePrices,
-                icon: const Icon(Icons.save),
-                label: const Text('Save Prices'),
-                style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48)),
-              ),
-            ],
 
             const SizedBox(height: 32),
 
@@ -290,65 +226,3 @@ class _TextField extends StatelessWidget {
   }
 }
 
-class _PriceField extends StatelessWidget {
-  final TextEditingController controller;
-  final ServiceType serviceType;
-  final Color color;
-  final IconData icon;
-  final String label;
-  final VoidCallback onChanged;
-
-  const _PriceField({
-    required this.controller,
-    required this.serviceType,
-    required this.color,
-    required this.icon,
-    required this.label,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 15)),
-            ),
-            SizedBox(
-              width: 110,
-              child: TextFormField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                textAlign: TextAlign.center,
-                onChanged: (_) => onChanged(),
-                decoration: InputDecoration(
-                  suffixText: AppConfig.currency,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -126,6 +126,18 @@ class DashboardScreen extends ConsumerWidget {
                       color: Colors.deepPurple,
                       onTap: () => context.go('/dashboard/schedule'),
                     ),
+                    _Tile(
+                      icon: Icons.cleaning_services_outlined,
+                      label: 'Services',
+                      color: Colors.teal[700]!,
+                      onTap: () => context.go('/dashboard/services'),
+                    ),
+                    _Tile(
+                      icon: Icons.local_offer_outlined,
+                      label: 'Promos',
+                      color: Colors.pink[700]!,
+                      onTap: () => context.go('/dashboard/promos'),
+                    ),
                   ],
                 ),
 

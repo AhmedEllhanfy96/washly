@@ -8,9 +8,12 @@
 #   2. Login to GitHub Container Registry:
 #        docker login ghcr.io -u ahmedellhanfy96 --password YOUR_PAT
 #        (PAT needs: read:packages)
-#   3. Copy docker-compose.vm.yml and a .env file to the VM (no repo clone needed):
-#        scp docker-compose.vm.yml .env user@vm:~/washly/
-#   4. Run this script:
+#   3. Copy files to the VM:
+#        scp docker-compose.vm.yml vm-deploy.sh ssl-init.sh .env user@vm:~/washly/
+#        scp -r nginx/ user@vm:~/washly/nginx/
+#   4. Get SSL certificate (one time only):
+#        bash ssl-init.sh your@email.com
+#   5. Run this script:
 #        bash vm-deploy.sh
 
 set -e
@@ -51,7 +54,7 @@ $COMPOSE -f docker-compose.vm.yml ps
 
 echo ""
 echo "Done!"
-echo "  Customer web → http://150.230.53.189:80"
-echo "  Admin web    → http://150.230.53.189:8081"
-echo "  Worker web   → http://150.230.53.189:8082"
-echo "  Backend API  → http://150.230.53.189:3000"
+echo "  Customer web → https://washly.duckdns.org"
+echo "  Admin web    → https://washly.duckdns.org:8081"
+echo "  Worker web   → https://washly.duckdns.org:8082"
+echo "  Backend API  → https://washly.duckdns.org/api"

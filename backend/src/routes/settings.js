@@ -14,6 +14,14 @@ export default async function settingsRoutes(app) {
       return reply.status(403).send({ error: 'Admin only' });
     }
     const updates = req.body;
+
+    // Price keys map to service keys in the services table
+    const priceKeyToServiceKey = {
+      price_exterior_only: 'exterior_only',
+      price_interior_only: 'interior_only',
+      price_full_service:  'full_service',
+    };
+
     for (const [key, value] of Object.entries(updates)) {
       await pool.query(
         `INSERT INTO app_settings (key, value, updated_at)
@@ -21,6 +29,13 @@ export default async function settingsRoutes(app) {
          ON CONFLICT (key) DO UPDATE SET value = to_jsonb($2::text), updated_at = NOW()`,
         [key, String(value)],
       );
+      // Keep services table in sync for the 3 core services
+      if (priceKeyToServiceKey[key]) {
+        await pool.query(
+          `UPDATE services SET price = $1 WHERE key = $2`,
+          [parseInt(value) || 0, priceKeyToServiceKey[key]],
+        );
+      }
     }
     const { rows: updated } = await pool.query('SELECT key, value FROM app_settings ORDER BY key');
     return Object.fromEntries(updated.map((r) => [r.key, r.value]));

@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/l10n/app_localizations.dart';
-import '../../core/models/booking.dart';
 import '../../core/providers/bookings_provider.dart';
+import '../../core/providers/services_provider.dart';
 import '../../core/services/booking_service.dart';
 import '../../shared/widgets/map_location_picker.dart';
 
@@ -29,7 +29,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   final _notesCtrl = TextEditingController();
 
   String _source = 'whatsapp';
-  String _serviceType = 'exteriorOnly';
+  String _serviceType = '';
   String _paymentMethod = 'cash';
   String? _selectedColor;
   DateTime _selectedDate = DateTime.now().add(const Duration(days: AppConfig.minBookingDaysAhead));
@@ -98,6 +98,12 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     if (_selectedColor == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.selectCarColor)),
+      );
+      return;
+    }
+    if (_serviceType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a service type')),
       );
       return;
     }
@@ -275,31 +281,23 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
               _SectionHeader(icon: Icons.cleaning_services_outlined, label: l10n.service),
               const SizedBox(height: 10),
-              Row(children: [
-                Expanded(
-                  child: _ServiceCard(
-                    title: l10n.serviceTypeName(ServiceType.exteriorOnly),
-                    price: '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
-                    selected: _serviceType == 'exteriorOnly',
-                    onTap: () => setState(() => _serviceType = 'exteriorOnly'),
-                  ),
+              ref.watch(adminServicesProvider).when(
+                loading: () => const CircularProgressIndicator(),
+                error: (_, __) => Text('Failed to load services',
+                    style: TextStyle(color: Colors.red[700])),
+                data: (services) => Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: services.map((svc) => SizedBox(
+                    width: (MediaQuery.of(context).size.width - 52) / 2,
+                    child: _ServiceCard(
+                      title: svc.name,
+                      price: '${svc.price} ${AppConfig.currency}',
+                      selected: _serviceType == svc.key,
+                      onTap: () => setState(() => _serviceType = svc.key),
+                    ),
+                  )).toList(),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _ServiceCard(
-                    title: l10n.serviceTypeName(ServiceType.interiorOnly),
-                    price: '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
-                    selected: _serviceType == 'interiorOnly',
-                    onTap: () => setState(() => _serviceType = 'interiorOnly'),
-                  ),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              _ServiceCard(
-                title: l10n.serviceTypeName(ServiceType.fullService),
-                price: '${AppConfig.priceFullService} ${AppConfig.currency}',
-                selected: _serviceType == 'fullService',
-                onTap: () => setState(() => _serviceType = 'fullService'),
               ),
 
               const SizedBox(height: 20),

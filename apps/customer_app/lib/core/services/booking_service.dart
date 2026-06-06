@@ -23,11 +23,13 @@ class BookingService {
     required Booking booking,
     required String customerName,
     required String customerPhone,
+    String? promoCode,
   }) async {
     final res = await _dio.post('/bookings', data: {
       ...booking.toJson(),
       'customerName': customerName,
       'customerPhone': customerPhone,
+      if (promoCode != null && promoCode.isNotEmpty) 'promoCode': promoCode,
     });
     return (res.data as Map<String, dynamic>)['id'] as String;
   }

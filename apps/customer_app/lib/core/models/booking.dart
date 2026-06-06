@@ -1,7 +1,5 @@
 import 'car.dart';
 
-enum ServiceType { exteriorOnly, interiorOnly, fullService }
-
 enum PaymentMethod {
   cash,
   instapay,
@@ -67,7 +65,8 @@ class Booking {
   final String id;
   final String userId;
   final Car car;
-  final ServiceType serviceType;
+  final String serviceType;
+  final String serviceName;
   final BookingLocation location;
   final DateTime scheduledAt;
   final String timeSlot;
@@ -76,6 +75,10 @@ class Booking {
   final String? notes;
   final PaymentMethod paymentMethod;
   final String paymentStatus;
+  final int price;
+  final int originalPrice;
+  final int discountPercent;
+  final String? promoCode;
   final DateTime createdAt;
 
   const Booking({
@@ -83,6 +86,7 @@ class Booking {
     required this.userId,
     required this.car,
     required this.serviceType,
+    this.serviceName = '',
     required this.location,
     required this.scheduledAt,
     required this.timeSlot,
@@ -91,6 +95,10 @@ class Booking {
     this.notes,
     this.paymentMethod = PaymentMethod.cash,
     this.paymentStatus = 'pending',
+    this.price = 0,
+    this.originalPrice = 0,
+    this.discountPercent = 0,
+    this.promoCode,
     required this.createdAt,
   });
 
@@ -98,7 +106,8 @@ class Booking {
         id: json['id'] as String,
         userId: json['userId'] as String? ?? '',
         car: Car.fromMap((json['car'] as Map<String, dynamic>?) ?? {}),
-        serviceType: _parseServiceType(json['serviceType'] as String?),
+        serviceType: json['serviceType'] as String? ?? 'exterior_only',
+        serviceName: json['serviceName'] as String? ?? '',
         location: BookingLocation(
           address: json['address'] as String? ?? '',
           latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
@@ -111,24 +120,23 @@ class Booking {
         notes: json['notes'] as String?,
         paymentMethod: PaymentMethod.fromString(json['paymentMethod'] as String? ?? 'cash'),
         paymentStatus: json['paymentStatus'] as String? ?? 'pending',
+        price: (json['price'] as num?)?.toInt() ?? 0,
+        originalPrice: (json['originalPrice'] as num?)?.toInt() ?? 0,
+        discountPercent: (json['discountPercent'] as num?)?.toInt() ?? 0,
+        promoCode: json['promoCode'] as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
-  static ServiceType _parseServiceType(String? v) => switch (v) {
-    'fullService' => ServiceType.fullService,
-    'interiorOnly' => ServiceType.interiorOnly,
-    _ => ServiceType.exteriorOnly,
-  };
-
   Map<String, dynamic> toJson() => {
         'car': car.toMap(),
-        'serviceType': serviceType.name,
+        'serviceType': serviceType,
         'address': location.address,
         'latitude': location.latitude,
         'longitude': location.longitude,
         'scheduledAt': scheduledAt.toIso8601String(),
         'timeSlot': timeSlot,
         'paymentMethod': paymentMethod.name,
+        if (promoCode != null) 'promoCode': promoCode,
       };
 
   Booking copyWith({BookingStatus? status, String? assignedTo}) => Booking(
@@ -136,12 +144,19 @@ class Booking {
         userId: userId,
         car: car,
         serviceType: serviceType,
+        serviceName: serviceName,
         location: location,
         scheduledAt: scheduledAt,
         timeSlot: timeSlot,
         status: status ?? this.status,
         assignedTo: assignedTo ?? this.assignedTo,
         notes: notes,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
+        price: price,
+        originalPrice: originalPrice,
+        discountPercent: discountPercent,
+        promoCode: promoCode,
         createdAt: createdAt,
       );
 }

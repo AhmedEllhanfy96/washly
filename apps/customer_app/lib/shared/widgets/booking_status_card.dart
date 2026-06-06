@@ -98,7 +98,9 @@ class BookingStatusCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  l10n.serviceTypeName(booking.serviceType),
+                                  booking.serviceName.isNotEmpty
+                                      ? booking.serviceName
+                                      : l10n.serviceTypeName(booking.serviceType),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15),

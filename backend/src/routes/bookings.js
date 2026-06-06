@@ -4,9 +4,12 @@ import { broadcast } from '../ws.js';
 export default async function (app) {
   const auth = { preHandler: [app.authenticate] };
 
-  // Idempotent migration — add price column to existing deployments
+  // Idempotent migrations
   try {
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS price INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_code TEXT DEFAULT NULL`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS original_price INTEGER DEFAULT 0`);
   } catch (err) {
     console.warn('[bookings] migration error:', err.message);
   }
@@ -36,17 +39,44 @@ export default async function (app) {
     const {
       car, serviceType, address, latitude = 0, longitude = 0,
       scheduledAt, timeSlot, customerName = '', customerPhone = '',
-      notes = '', source = 'app', paymentMethod = 'cash',
+      notes = '', source = 'app', paymentMethod = 'cash', promoCode = null,
     } = req.body;
 
-    const bookedPrice = await _lookupPrice(serviceType);
+    const originalPrice = await _lookupPrice(serviceType);
+
+    // Validate and apply promo code
+    let discountPercent = 0;
+    let appliedPromoCode = null;
+    if (promoCode) {
+      const { rows: promos } = await pool.query(
+        `SELECT * FROM promos
+         WHERE UPPER(code) = UPPER($1)
+           AND is_active = true
+           AND valid_from <= NOW()
+           AND valid_until >= NOW()
+           AND (max_uses IS NULL OR used_count < max_uses)`,
+        [promoCode],
+      );
+      if (promos.length) {
+        discountPercent = promos[0].discount_percent;
+        appliedPromoCode = promos[0].code;
+        await pool.query('UPDATE promos SET used_count = used_count + 1 WHERE id = $1', [promos[0].id]);
+      }
+    }
+
+    const bookedPrice = discountPercent > 0
+      ? Math.round(originalPrice * (1 - discountPercent / 100))
+      : originalPrice;
+
     const { rows } = await pool.query(
       `INSERT INTO bookings
          (user_id, customer_name, customer_phone, car, service_type, address,
-          latitude, longitude, scheduled_at, time_slot, notes, source, payment_method, price)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+          latitude, longitude, scheduled_at, time_slot, notes, source, payment_method,
+          price, original_price, discount_percent, promo_code)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
       [uid, customerName, customerPhone, JSON.stringify(car), serviceType,
-       address, latitude, longitude, scheduledAt, timeSlot, notes, source, paymentMethod, bookedPrice]
+       address, latitude, longitude, scheduledAt, timeSlot, notes, source, paymentMethod,
+       bookedPrice, originalPrice, discountPercent, appliedPromoCode],
     );
     const booking = toBooking(rows[0]);
     broadcast({ type: 'booking_created', booking });
@@ -174,8 +204,28 @@ async function _addToCompanyWallet({ source, bookingId, serviceType, workerId = 
 }
 
 async function _lookupPrice(serviceType) {
-  // Handle both camelCase (from Flutter) and snake_case (DB default)
-  const keyMap = {
+  // Normalize camelCase keys to snake_case for services table lookup
+  const normalize = (k) => k
+    .replace(/([A-Z])/g, '_$1').toLowerCase()
+    .replace(/^_/, '');
+  const normalizedKey = normalize(serviceType);
+
+  // Try services table first (covers both old 3 services and any new ones)
+  const { rows: svcRows } = await pool.query(
+    `SELECT price FROM services WHERE key = $1 AND is_active = true`,
+    [normalizedKey],
+  );
+  if (svcRows.length) return parseInt(svcRows[0].price) || 0;
+
+  // Fall back to exact key match (handles camelCase keys from older clients)
+  const { rows: svcRows2 } = await pool.query(
+    `SELECT price FROM services WHERE key = $1 AND is_active = true`,
+    [serviceType],
+  );
+  if (svcRows2.length) return parseInt(svcRows2[0].price) || 0;
+
+  // Last resort: app_settings (legacy)
+  const settingsKeyMap = {
     exteriorOnly:  'price_exterior_only',
     exterior_only: 'price_exterior_only',
     interiorOnly:  'price_interior_only',
@@ -183,9 +233,9 @@ async function _lookupPrice(serviceType) {
     fullService:   'price_full_service',
     full_service:  'price_full_service',
   };
-  const key = keyMap[serviceType] || 'price_exterior_only';
+  const settingsKey = settingsKeyMap[serviceType] || settingsKeyMap[normalizedKey] || 'price_exterior_only';
   const { rows } = await pool.query(
-    `SELECT value #>> '{}' AS val FROM app_settings WHERE key = $1`, [key]
+    `SELECT value #>> '{}' AS val FROM app_settings WHERE key = $1`, [settingsKey],
   );
   return rows.length ? (parseInt(rows[0].val) || 0) : 0;
 }
@@ -210,6 +260,9 @@ function toBooking(r) {
     paymentMethod: r.payment_method ?? 'cash',
     paymentStatus: r.payment_status ?? 'pending',
     price: r.price ? parseInt(r.price) : 0,
+    originalPrice: r.original_price ? parseInt(r.original_price) : 0,
+    discountPercent: r.discount_percent ? parseInt(r.discount_percent) : 0,
+    promoCode: r.promo_code ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

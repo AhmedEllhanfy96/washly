@@ -20,29 +20,52 @@ services:
       DATABASE_URL: postgres://washly:${DB_PASSWORD:-washly_secret}@postgres:5432/washly
       JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
       PORT: 3000
-    ports:
-      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    # No external port — nginx proxies /api and /ws
 
   customer-app:
     image: ghcr.io/ahmedellhanfy96/washly/customer-app:latest
-    ports:
-      - "80:80"
     restart: unless-stopped
+    # No external port — nginx proxies /
 
   admin-app:
     image: ghcr.io/ahmedellhanfy96/washly/admin-app:latest
-    ports:
-      - "8081:80"
     restart: unless-stopped
+    # No external port — nginx proxies :8081
 
   worker-app:
     image: ghcr.io/ahmedellhanfy96/washly/worker-app:latest
+    restart: unless-stopped
+    # No external port — nginx proxies :8082
+
+  nginx:
+    image: nginx:alpine
     ports:
-      - "8082:80"
+      - "80:80"
+      - "443:443"
+      - "8081:8081"
+      - "8082:8082"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certbot/conf:/etc/letsencrypt:ro
+      - ./nginx/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - customer-app
+      - admin-app
+      - worker-app
+      - backend
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    # Run manually: docker compose -f docker-compose.prod.yml run --rm certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
     restart: unless-stopped
 
 volumes:
