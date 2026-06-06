@@ -216,54 +216,59 @@ services:
       DATABASE_URL: postgres://washly:${DB_PASSWORD:-washly_secret}@postgres:5432/washly
       JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
       PORT: 3000
+    ports:
+      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
       init-db:
         condition: service_completed_successfully
     restart: unless-stopped
-    # No external port — nginx handles HTTPS
 
   customer-app:
     image: ghcr.io/ahmedellhanfy96/washly/customer-app:latest
     pull_policy: always
+    ports:
+      - "80:80"
     restart: unless-stopped
 
   admin-app:
     image: ghcr.io/ahmedellhanfy96/washly/admin-app:latest
     pull_policy: always
+    ports:
+      - "8081:80"
     restart: unless-stopped
 
   worker-app:
     image: ghcr.io/ahmedellhanfy96/washly/worker-app:latest
     pull_policy: always
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    pull_policy: if_not_present
     ports:
-      - "80:80"
-      - "443:443"
-      - "8081:8081"
-      - "8082:8082"
-    volumes:
-      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certbot/conf:/etc/letsencrypt:ro
-      - ./nginx/certbot/www:/var/www/certbot:ro
-    depends_on:
-      - customer-app
-      - admin-app
-      - worker-app
-      - backend
+      - "8082:80"
     restart: unless-stopped
 
-  certbot:
-    image: certbot/certbot
-    pull_policy: if_not_present
-    volumes:
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-    # Runs automatic renewal every 12 hours
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done"
-    restart: unless-stopped
+  # nginx SSL proxy — only active after running ssl-init.sh.
+  # Comment out this section until the cert is ready.
+  # nginx:
+  #   image: nginx:alpine
+  #   pull_policy: if_not_present
+  #   ports:
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/certbot/conf:/etc/letsencrypt:ro
+  #     - ./nginx/certbot/www:/var/www/certbot:ro
+  #   depends_on:
+  #     - customer-app
+  #     - admin-app
+  #     - worker-app
+  #     - backend
+  #   restart: unless-stopped
+
+  # certbot:
+  #   image: certbot/certbot
+  #   pull_policy: if_not_present
+  #   volumes:
+  #     - ./nginx/certbot/conf:/etc/letsencrypt
+  #     - ./nginx/certbot/www:/var/www/certbot
+  #   entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done"
+  #   restart: unless-stopped
