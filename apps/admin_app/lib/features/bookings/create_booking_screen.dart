@@ -329,17 +329,6 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                         fontWeight: _paymentMethod == 'instapay' ? FontWeight.w600 : null),
                     onSelected: (_) => setState(() => _paymentMethod = 'instapay'),
                   ),
-                  ChoiceChip(
-                    avatar: Icon(Icons.credit_card, size: 16,
-                        color: _paymentMethod == 'credit_card' ? Colors.white : Colors.purple),
-                    label: const Text('Credit Card'),
-                    selected: _paymentMethod == 'credit_card',
-                    selectedColor: Colors.purple,
-                    labelStyle: TextStyle(
-                        color: _paymentMethod == 'credit_card' ? Colors.white : null,
-                        fontWeight: _paymentMethod == 'credit_card' ? FontWeight.w600 : null),
-                    onSelected: (_) => setState(() => _paymentMethod = 'credit_card'),
-                  ),
                 ],
               ),
 

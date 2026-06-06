@@ -10,6 +10,7 @@ import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/booking_provider.dart';
 import '../../core/providers/pricing_provider.dart';
+import '../../core/providers/services_provider.dart';
 import '../../shared/widgets/booking_status_card.dart';
 import '../../shared/widgets/language_toggle_button.dart';
 
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
     final profile = ref.watch(authProvider);
     final bookings = ref.watch(userBookingsProvider);
     final pricing = ref.watch(pricingProvider);
+    final services = ref.watch(servicesProvider);
     final l10n = context.l10n;
     final theme = Theme.of(context);
 
@@ -147,37 +149,41 @@ class HomeScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: SizedBox(
               height: 170,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _ServiceCard(
-                    imageUrl: AppConfig.imgExterior,
-                    gradientColors: const [Color(0xFF1565C0), Color(0xFF00ACC1)],
-                    title: l10n.exteriorOnlyShort,
-                    price: pricing.whenOrNull(data: (p) => p.exteriorLabel) ??
-                        '${AppConfig.priceExteriorOnly} ${AppConfig.currency}',
-                    onTap: () => context.go('/home/book'),
-                  ),
-                  const SizedBox(width: 12),
-                  _ServiceCard(
-                    imageUrl: AppConfig.imgInterior,
-                    gradientColors: const [Color(0xFF00695C), Color(0xFF4CAF50)],
-                    title: l10n.interiorOnlyShort,
-                    price: pricing.whenOrNull(data: (p) => p.interiorLabel) ??
-                        '${AppConfig.priceInteriorOnly} ${AppConfig.currency}',
-                    onTap: () => context.go('/home/book'),
-                  ),
-                  const SizedBox(width: 12),
-                  _ServiceCard(
-                    imageUrl: AppConfig.imgFullService,
-                    gradientColors: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
-                    title: l10n.fullServiceShort,
-                    price: pricing.whenOrNull(data: (p) => p.fullServiceLabel) ??
-                        '${AppConfig.priceFullService} ${AppConfig.currency}',
-                    onTap: () => context.go('/home/book'),
-                  ),
-                ],
+              child: services.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (svcList) => ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: svcList.map((svc) {
+                    // Pick gradient/image by well-known keys, fall back to a neutral theme
+                    final gradients = {
+                      'exterior_only': const [Color(0xFF1565C0), Color(0xFF00ACC1)],
+                      'interior_only': const [Color(0xFF00695C), Color(0xFF4CAF50)],
+                      'full_service':  const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+                    };
+                    final images = {
+                      'exterior_only': AppConfig.imgExterior,
+                      'interior_only': AppConfig.imgInterior,
+                      'full_service':  AppConfig.imgFullService,
+                    };
+                    final colors = gradients[svc.key] ??
+                        const [Color(0xFF37474F), Color(0xFF78909C)];
+                    final img = svc.imageUrl.isNotEmpty
+                        ? svc.imageUrl
+                        : (images[svc.key] ?? AppConfig.imgExterior);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _ServiceCard(
+                        imageUrl: img,
+                        gradientColors: colors,
+                        title: svc.name,
+                        price: '${svc.price} ${AppConfig.currency}',
+                        onTap: () => context.go('/home/book'),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ),
