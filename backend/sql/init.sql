@@ -180,8 +180,20 @@ CREATE TABLE IF NOT EXISTS promos (
   valid_until TIMESTAMPTZ NOT NULL,
   is_active BOOLEAN DEFAULT true,
   max_uses INTEGER DEFAULT NULL,
+  max_uses_per_user INTEGER DEFAULT NULL,
   used_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE promos ADD COLUMN IF NOT EXISTS max_uses_per_user INTEGER DEFAULT NULL;
+
+-- Per-user promo usage tracking
+CREATE TABLE IF NOT EXISTS promo_uses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  promo_id UUID NOT NULL REFERENCES promos(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+  used_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Promo tracking on bookings

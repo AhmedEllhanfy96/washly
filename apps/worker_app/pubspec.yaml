@@ -23,9 +23,10 @@ dependencies:
   # Navigation
   go_router: ^14.1.4
 
-  # Map
+  # Map + location
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  geolocator: ^13.0.2
 
   # External links
   url_launcher: ^6.3.0

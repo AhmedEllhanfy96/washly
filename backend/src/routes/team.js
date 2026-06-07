@@ -1,4 +1,10 @@
 import { pool } from '../db.js';
+import { broadcast } from '../ws.js';
+
+// In-memory worker location store: workerId → { lat, lng, name, workerId, updatedAt }
+const workerLocations = new Map();
+
+export { workerLocations };
 
 export default async function (app) {
   const auth = { preHandler: [app.authenticate] };
@@ -56,6 +62,34 @@ export default async function (app) {
   app.delete('/workers/:id', auth, async (req, reply) => {
     await pool.query("DELETE FROM users WHERE id = $1 AND role = 'worker'", [req.params.id]);
     return reply.status(204).send();
+  });
+
+  // POST /team/workers/me/location — worker reports current GPS position
+  app.post('/workers/me/location', auth, async (req, reply) => {
+    const { uid, role } = req.user;
+    if (role !== 'worker') return reply.status(403).send({ error: 'Workers only' });
+    const { lat, lng } = req.body;
+    if (lat == null || lng == null) return reply.status(400).send({ error: 'lat and lng required' });
+
+    // Fetch worker name once and cache in the location entry
+    let name = workerLocations.get(uid)?.name;
+    if (!name) {
+      const { rows } = await pool.query('SELECT name FROM users WHERE id = $1', [uid]);
+      name = rows[0]?.name ?? 'Worker';
+    }
+
+    const entry = { workerId: uid, name, lat: parseFloat(lat), lng: parseFloat(lng), updatedAt: new Date().toISOString() };
+    workerLocations.set(uid, entry);
+
+    // Broadcast to admins watching the map
+    broadcast({ type: 'worker_location', ...entry });
+    return reply.status(204).send();
+  });
+
+  // GET /team/workers/locations — admin: get all known worker locations
+  app.get('/workers/locations', auth, async (req, reply) => {
+    if (req.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' });
+    return Array.from(workerLocations.values());
   });
 
   app.get('/', auth, async () => {

@@ -10,6 +10,14 @@ export default async function (app) {
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_code TEXT DEFAULT NULL`);
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0`);
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS original_price INTEGER DEFAULT 0`);
+    await pool.query(`ALTER TABLE promos ADD COLUMN IF NOT EXISTS max_uses_per_user INTEGER DEFAULT NULL`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS promo_uses (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      promo_id UUID NOT NULL REFERENCES promos(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+      used_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
   } catch (err) {
     console.warn('[bookings] migration error:', err.message);
   }
@@ -47,6 +55,7 @@ export default async function (app) {
     // Validate and apply promo code
     let discountPercent = 0;
     let appliedPromoCode = null;
+    let appliedPromoId = null;
     if (promoCode) {
       const { rows: promos } = await pool.query(
         `SELECT * FROM promos
@@ -58,9 +67,21 @@ export default async function (app) {
         [promoCode],
       );
       if (promos.length) {
-        discountPercent = promos[0].discount_percent;
-        appliedPromoCode = promos[0].code;
-        await pool.query('UPDATE promos SET used_count = used_count + 1 WHERE id = $1', [promos[0].id]);
+        const promo = promos[0];
+        // Check per-user limit
+        if (promo.max_uses_per_user != null) {
+          const { rows: uses } = await pool.query(
+            'SELECT COUNT(*)::int AS cnt FROM promo_uses WHERE promo_id = $1 AND user_id = $2',
+            [promo.id, uid],
+          );
+          if (uses[0].cnt >= promo.max_uses_per_user) {
+            return reply.status(400).send({ error: 'You have reached the maximum uses of this promo code' });
+          }
+        }
+        discountPercent = promo.discount_percent;
+        appliedPromoCode = promo.code;
+        appliedPromoId = promo.id;
+        await pool.query('UPDATE promos SET used_count = used_count + 1 WHERE id = $1', [promo.id]);
       }
     }
 
@@ -79,6 +100,15 @@ export default async function (app) {
        bookedPrice, originalPrice, discountPercent, appliedPromoCode],
     );
     const booking = toBooking(rows[0]);
+
+    // Record per-user promo use
+    if (appliedPromoId) {
+      await pool.query(
+        'INSERT INTO promo_uses (promo_id, user_id, booking_id) VALUES ($1, $2, $3)',
+        [appliedPromoId, uid, booking.id],
+      );
+    }
+
     broadcast({ type: 'booking_created', booking });
     return reply.status(201).send(booking);
   });

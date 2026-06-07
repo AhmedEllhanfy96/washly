@@ -28,6 +28,18 @@ export default async function promosRoutes(app) {
     );
     if (!rows.length) return reply.status(404).send({ error: 'Invalid or expired promo code' });
     const promo = rows[0];
+
+    // Check per-user limit if set
+    if (promo.max_uses_per_user != null) {
+      const { rows: uses } = await pool.query(
+        'SELECT COUNT(*)::int AS cnt FROM promo_uses WHERE promo_id = $1 AND user_id = $2',
+        [promo.id, req.user.uid],
+      );
+      if (uses[0].cnt >= promo.max_uses_per_user) {
+        return reply.status(404).send({ error: 'You have reached the maximum uses of this promo code' });
+      }
+    }
+
     return { code: promo.code, discountPercent: promo.discount_percent };
   });
 
@@ -41,27 +53,28 @@ export default async function promosRoutes(app) {
   // POST /promos — admin: create promo
   app.post('/', auth, async (req, reply) => {
     if (!await assertAdmin(req, reply)) return;
-    const { code, discountPercent, validFrom, validUntil, maxUses = null } = req.body;
+    const { code, discountPercent, validFrom, validUntil, maxUses = null, maxUsesPerUser = null } = req.body;
     if (!code || !discountPercent || !validUntil) {
       return reply.status(400).send({ error: 'code, discountPercent, and validUntil are required' });
     }
     const { rows } = await pool.query(
-      `INSERT INTO promos (code, discount_percent, valid_from, valid_until, max_uses)
-       VALUES (UPPER($1), $2, $3, $4, $5) RETURNING *`,
-      [code, discountPercent, validFrom || new Date().toISOString(), validUntil, maxUses],
+      `INSERT INTO promos (code, discount_percent, valid_from, valid_until, max_uses, max_uses_per_user)
+       VALUES (UPPER($1), $2, $3, $4, $5, $6) RETURNING *`,
+      [code, discountPercent, validFrom || new Date().toISOString(), validUntil, maxUses, maxUsesPerUser],
     );
     return reply.status(201).send(toPromo(rows[0]));
   });
 
-  // PATCH /promos/:id — admin: update promo (isActive, validUntil, maxUses)
+  // PATCH /promos/:id — admin: update promo
   app.patch('/:id', auth, async (req, reply) => {
     if (!await assertAdmin(req, reply)) return;
-    const { isActive, validUntil, maxUses } = req.body;
+    const { isActive, validUntil, maxUses, maxUsesPerUser } = req.body;
     const sets = [];
     const vals = [];
     if (isActive !== undefined) { vals.push(isActive); sets.push(`is_active = $${vals.length}`); }
     if (validUntil !== undefined) { vals.push(validUntil); sets.push(`valid_until = $${vals.length}`); }
     if (maxUses !== undefined) { vals.push(maxUses); sets.push(`max_uses = $${vals.length}`); }
+    if (maxUsesPerUser !== undefined) { vals.push(maxUsesPerUser); sets.push(`max_uses_per_user = $${vals.length}`); }
     if (!sets.length) return reply.status(400).send({ error: 'Nothing to update' });
     vals.push(req.params.id);
     const { rows } = await pool.query(
@@ -88,6 +101,7 @@ function toPromo(r) {
     validUntil: r.valid_until,
     isActive: r.is_active,
     maxUses: r.max_uses,
+    maxUsesPerUser: r.max_uses_per_user,
     usedCount: r.used_count,
     createdAt: r.created_at,
   };

@@ -63,6 +63,7 @@ class PromosScreen extends ConsumerWidget {
                 discountPercent: data['discountPercent'] as int,
                 validUntil: data['validUntil'] as DateTime,
                 maxUses: data['maxUses'] as int?,
+                maxUsesPerUser: data['maxUsesPerUser'] as int?,
               );
           ref.invalidate(adminPromosProvider);
         },
@@ -164,10 +165,19 @@ class _PromoTile extends ConsumerWidget {
                 const SizedBox(width: 4),
                 Text(
                   promo.maxUses != null
-                      ? 'Used ${promo.usedCount}/${promo.maxUses}'
-                      : 'Used ${promo.usedCount} (unlimited)',
+                      ? 'Total: ${promo.usedCount}/${promo.maxUses}'
+                      : 'Total: ${promo.usedCount} (unlimited)',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
+                if (promo.maxUsesPerUser != null) ...[
+                  const SizedBox(width: 10),
+                  Icon(Icons.person_outline, size: 13, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${promo.maxUsesPerUser}x per client',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 10),
@@ -295,6 +305,7 @@ class _PromoDialogState extends State<_PromoDialog> {
   final _codeCtrl = TextEditingController();
   final _pctCtrl = TextEditingController();
   final _maxUsesCtrl = TextEditingController();
+  final _maxUsesPerUserCtrl = TextEditingController();
   DateTime _validUntil = DateTime.now().add(const Duration(days: 7));
   bool _saving = false;
 
@@ -303,6 +314,7 @@ class _PromoDialogState extends State<_PromoDialog> {
     _codeCtrl.dispose();
     _pctCtrl.dispose();
     _maxUsesCtrl.dispose();
+    _maxUsesPerUserCtrl.dispose();
     super.dispose();
   }
 
@@ -356,7 +368,18 @@ class _PromoDialogState extends State<_PromoDialog> {
               controller: _maxUsesCtrl,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Max Uses (leave empty for unlimited)',
+                labelText: 'Max total uses (empty = unlimited)',
+                hintText: 'e.g. 100',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _maxUsesPerUserCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Max uses per client (empty = unlimited)',
+                hintText: 'e.g. 1',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -392,6 +415,8 @@ class _PromoDialogState extends State<_PromoDialog> {
     }
     final maxUsesText = _maxUsesCtrl.text.trim();
     final maxUses = maxUsesText.isEmpty ? null : int.tryParse(maxUsesText);
+    final maxUsesPerUserText = _maxUsesPerUserCtrl.text.trim();
+    final maxUsesPerUser = maxUsesPerUserText.isEmpty ? null : int.tryParse(maxUsesPerUserText);
 
     setState(() => _saving = true);
     try {
@@ -400,6 +425,7 @@ class _PromoDialogState extends State<_PromoDialog> {
         'discountPercent': pct,
         'validUntil': _validUntil,
         'maxUses': maxUses,
+        'maxUsesPerUser': maxUsesPerUser,
       });
       if (mounted) Navigator.pop(context);
     } catch (e) {
