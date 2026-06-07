@@ -53,15 +53,9 @@ class AppConfig {
       'https://nominatim.openstreetmap.org/search';
   static const String userAgent = 'WashlyApp/1.0';
 
-  // ── Service images (Unsplash — replace with owned images for production) ──
+  // ── App images ────────────────────────────────────────────────────────────
   static const String imgHero =
       'https://images.unsplash.com/photo-1520340596035-7f3b89e01f63?w=900&q=80&fit=crop';
-  static const String imgExterior =
-      'https://images.unsplash.com/photo-1616421016789-5a1e8f9bc0f5?w=600&q=80&fit=crop';
-  static const String imgInterior =
-      'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80&fit=crop';
-  static const String imgFullService =
-      'https://images.unsplash.com/photo-1614602849278-7c9c29f55b2e?w=600&q=80&fit=crop';
 
   // ── UI constants ──────────────────────────────────────────────────────────
   static const double heroExpandedHeight = 270.0;

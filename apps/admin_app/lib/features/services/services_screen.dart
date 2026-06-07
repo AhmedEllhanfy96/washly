@@ -245,6 +245,7 @@ class _ServiceTile extends ConsumerWidget {
             'features': data['features'],
             'badge': data['badge'],
             'sortOrder': data['sortOrder'],
+            'imageUrl': data['imageUrl'],
           });
           ref.invalidate(adminServicesProvider);
         },
@@ -302,6 +303,7 @@ class _ServiceDialogState extends State<_ServiceDialog> {
   final _badgeCtrl = TextEditingController();
   final _featuresCtrl = TextEditingController();
   final _sortCtrl = TextEditingController();
+  final _imageUrlCtrl = TextEditingController();
   bool _saving = false;
 
   @override
@@ -316,6 +318,7 @@ class _ServiceDialogState extends State<_ServiceDialog> {
       _badgeCtrl.text = s.badge;
       _featuresCtrl.text = s.features.join('\n');
       _sortCtrl.text = s.sortOrder.toString();
+      _imageUrlCtrl.text = s.imageUrl;
     } else {
       _sortCtrl.text = '0';
     }
@@ -330,6 +333,7 @@ class _ServiceDialogState extends State<_ServiceDialog> {
     _badgeCtrl.dispose();
     _featuresCtrl.dispose();
     _sortCtrl.dispose();
+    _imageUrlCtrl.dispose();
     super.dispose();
   }
 
@@ -365,6 +369,17 @@ class _ServiceDialogState extends State<_ServiceDialog> {
               decoration: const InputDecoration(
                 labelText: 'Description',
                 border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _imageUrlCtrl,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(
+                labelText: 'Image URL (optional)',
+                hintText: 'https://example.com/image.jpg',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.image_outlined),
               ),
             ),
             const SizedBox(height: 12),
@@ -457,6 +472,7 @@ class _ServiceDialogState extends State<_ServiceDialog> {
         'features': features,
         'badge': _badgeCtrl.text.trim(),
         'sortOrder': int.tryParse(_sortCtrl.text.trim()) ?? 0,
+        'imageUrl': _imageUrlCtrl.text.trim(),
       });
       if (mounted) Navigator.pop(context);
     } catch (e) {

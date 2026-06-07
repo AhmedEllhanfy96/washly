@@ -155,27 +155,20 @@ class HomeScreen extends ConsumerWidget {
                 data: (svcList) => ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: svcList.map((svc) {
-                    // Pick gradient/image by well-known keys, fall back to a neutral theme
-                    final gradients = {
-                      'exterior_only': const [Color(0xFF1565C0), Color(0xFF00ACC1)],
-                      'interior_only': const [Color(0xFF00695C), Color(0xFF4CAF50)],
-                      'full_service':  const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
-                    };
-                    final images = {
-                      'exterior_only': AppConfig.imgExterior,
-                      'interior_only': AppConfig.imgInterior,
-                      'full_service':  AppConfig.imgFullService,
-                    };
-                    final colors = gradients[svc.key] ??
-                        const [Color(0xFF37474F), Color(0xFF78909C)];
-                    final img = svc.imageUrl.isNotEmpty
-                        ? svc.imageUrl
-                        : (images[svc.key] ?? AppConfig.imgExterior);
+                  children: svcList.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final svc = entry.value;
+                    const themes = [
+                      [Color(0xFF1565C0), Color(0xFF00ACC1)],
+                      [Color(0xFF00695C), Color(0xFF4CAF50)],
+                      [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+                      [Color(0xFF37474F), Color(0xFF78909C)],
+                    ];
+                    final colors = themes[i % themes.length];
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: _ServiceCard(
-                        imageUrl: img,
+                        imageUrl: svc.imageUrl,
                         gradientColors: colors,
                         title: svc.name,
                         price: '${svc.price} ${AppConfig.currency}',
@@ -333,24 +326,19 @@ class _ServiceCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Shimmer.fromColors(
-                  baseColor: gradientColors.first,
-                  highlightColor: gradientColors.last,
-                  child: Container(color: gradientColors.first),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+              if (imageUrl.isNotEmpty)
+                CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Shimmer.fromColors(
+                    baseColor: gradientColors.first,
+                    highlightColor: gradientColors.last,
+                    child: Container(color: gradientColors.first),
                   ),
-                ),
-              ),
+                  errorWidget: (_, __, ___) => _GradientFill(gradientColors),
+                )
+              else
+                _GradientFill(gradientColors),
               // Gradient overlay from bottom
               Container(
                 decoration: BoxDecoration(
@@ -393,6 +381,22 @@ class _ServiceCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GradientFill extends StatelessWidget {
+  final List<Color> colors;
+  const _GradientFill(this.colors);
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      );
 }
 
 // ── Feature tile ─────────────────────────────────────────────────────────────
