@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -256,10 +255,10 @@ class _SlideTile extends StatelessWidget {
               width: 100,
               height: 80,
               child: slide.imageUrl.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: slide.imageUrl,
+                  ? Image.network(
+                      slide.imageUrl,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => _placeholder(),
+                      errorBuilder: (_, __, ___) => _placeholder(),
                     )
                   : _placeholder(),
             ),
@@ -406,10 +405,10 @@ class _SlideDialogState extends State<_SlideDialog> {
                 child: SizedBox(
                   height: 120,
                   width: double.infinity,
-                  child: CachedNetworkImage(
-                    imageUrl: _previewUrl,
+                  child: Image.network(
+                    _previewUrl,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => Container(
+                    errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey[200],
                       child: const Icon(Icons.broken_image, color: Colors.grey),
                     ),
