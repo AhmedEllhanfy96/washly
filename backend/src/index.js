@@ -11,6 +11,7 @@ import settingsRoutes from './routes/settings.js';
 import walletRoutes from './routes/wallet.js';
 import servicesRoutes from './routes/services.js';
 import promosRoutes from './routes/promos.js';
+import slidesRoutes from './routes/slides.js';
 import { registerWsRoutes } from './ws.js';
 import { pool } from './db.js';
 
@@ -51,6 +52,7 @@ await app.register(settingsRoutes, { prefix: '/settings' });
 await app.register(walletRoutes, { prefix: '/wallet' });
 await app.register(servicesRoutes, { prefix: '/services' });
 await app.register(promosRoutes, { prefix: '/promos' });
+await app.register(slidesRoutes, { prefix: '/slides' });
 
 registerWsRoutes(app);
 

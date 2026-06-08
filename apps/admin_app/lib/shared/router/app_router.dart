@@ -12,6 +12,7 @@ import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/promos/promos_screen.dart';
 import '../../features/schedule/schedule_screen.dart';
 import '../../features/services/services_screen.dart';
+import '../../features/slides/slides_screen.dart';
 import '../../features/workers_map/workers_map_screen.dart';
 import '../../features/settings/pricing_screen.dart';
 import '../../features/team/team_screen.dart';
@@ -69,6 +70,7 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: 'services', builder: (_, __) => const ServicesScreen()),
           GoRoute(path: 'promos', builder: (_, __) => const PromosScreen()),
           GoRoute(path: 'workers-map', builder: (_, __) => const WorkersMapScreen()),
+          GoRoute(path: 'slides', builder: (_, __) => const SlidesScreen()),
         ],
       ),
     ],

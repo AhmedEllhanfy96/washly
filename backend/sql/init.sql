@@ -171,6 +171,17 @@ INSERT INTO services (key, name, description, price, sort_order, features, badge
    '["Exterior Wash","Wheel Cleaning","Vacuum","Dashboard Wipe","Window Interior","Air Freshener"]', 'BEST VALUE')
 ON CONFLICT (key) DO NOTHING;
 
+-- Marketing carousel slides shown on the customer home screen
+CREATE TABLE IF NOT EXISTS slides (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  image_url TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  caption TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Promo codes with percentage discounts on wash services
 CREATE TABLE IF NOT EXISTS promos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

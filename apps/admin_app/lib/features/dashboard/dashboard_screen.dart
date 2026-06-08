@@ -144,6 +144,12 @@ class DashboardScreen extends ConsumerWidget {
                       color: Colors.blue[800]!,
                       onTap: () => context.go('/dashboard/workers-map'),
                     ),
+                    _Tile(
+                      icon: Icons.slideshow_outlined,
+                      label: 'Slides',
+                      color: Colors.deepOrange,
+                      onTap: () => context.go('/dashboard/slides'),
+                    ),
                   ],
                 ),
 
